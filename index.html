@@ -742,7 +742,13 @@
       </div>
 
       <!-- 현재 저장된 업무분장 현황 -->
-      <div id="workCurrentStatus" style="margin-top:20px"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E2E8F0">
+        <button onclick="toggleWorkCurrentStatus()" id="workStatusToggleBtn" style="width:100%;padding:10px;border-radius:10px;background:#F0F9FF;border:1.5px solid #BAE6FD;color:#0369A1;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+          <span>📋 저장된 업무분장 현황 보기</span>
+          <span id="workStatusToggleIcon">▼</span>
+        </button>
+        <div id="workCurrentStatus" style="display:none;margin-top:12px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -810,6 +816,63 @@
 <div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 text-white px-5 py-3 rounded-2xl text-sm font-semibold z-50" style="background:#0F172A;box-shadow:0 8px 24px rgba(15,23,42,.4);transform:translateX(-50%)"></div>
 
 <script>
+// ── Supabase KV 스토리지 ──────────────────────────────────
+const _SB_URL = 'https://fafkmzollgdoqkglahrn.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZmttem9sbGdkb3FrZ2xhaHJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDY1NzQsImV4cCI6MjA5NzM4MjU3NH0.9wvNGJE1O7CHMyKhH9pv1Flg5B3MDYJ-BVsZtB3qD8k';
+const _SB_HEADERS = { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Content-Type': 'application/json' };
+let _SB_CACHE = {};  // 인메모리 캐시 (localStorage 대체)
+
+async function sbLoadAll() {
+  try {
+    const res = await fetch(`${_SB_URL}/rest/v1/kv_store?select=key,value`, { headers: _SB_HEADERS });
+    if (!res.ok) return;
+    const rows = await res.json();
+    rows.forEach(r => { _SB_CACHE[r.key] = r.value; });
+
+    // Supabase가 비어있으면 localStorage 데이터를 이전
+    if (rows.length === 0 && localStorage.length > 0) {
+      console.log('localStorage → Supabase 데이터 이전 시작...');
+      const batch = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        try {
+          const value = JSON.parse(localStorage.getItem(key));
+          _SB_CACHE[key] = value;
+          batch.push({ key, value, updated_at: new Date().toISOString() });
+        } catch(e) {}
+      }
+      if (batch.length > 0) {
+        await fetch(`${_SB_URL}/rest/v1/kv_store`, {
+          method: 'POST',
+          headers: { ..._SB_HEADERS, 'Prefer': 'resolution=merge-duplicates' },
+          body: JSON.stringify(batch)
+        });
+        console.log(`${batch.length}개 항목 이전 완료`);
+      }
+    }
+  } catch(e) { console.warn('Supabase 로드 실패, 로컬모드:', e.message); }
+}
+
+function sbGet(key, fallback) {
+  if (_SB_CACHE[key] !== undefined) return _SB_CACHE[key];
+  // Supabase 캐시에 없으면 localStorage에서 읽기
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw !== null) return JSON.parse(raw);
+  } catch(e) {}
+  return fallback;
+}
+
+function sbSet(key, value) {
+  _SB_CACHE[key] = value;
+  localStorage.setItem(key, JSON.stringify(value)); // 로컬 백업
+  fetch(`${_SB_URL}/rest/v1/kv_store`, {
+    method: 'POST',
+    headers: { ..._SB_HEADERS, 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify({ key, value, updated_at: new Date().toISOString() })
+  }).catch(e => console.warn('sbSet 실패:', e.message));
+}
+
 const EMPLOYEES = Array.from({length: 21}, (_, i) => `홍길동${i + 1}`);
 
 let currentEmployee = null;
@@ -832,14 +895,13 @@ function getCurrentTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-// 로컬스토리지 키
+// 스토리지 키
 function storageKey(employee, date) { return `att_${employee}_${date}`; }
 function getRecord(employee, date) {
-  const raw = localStorage.getItem(storageKey(employee, date));
-  return raw ? JSON.parse(raw) : null;
+  return sbGet(storageKey(employee, date), null);
 }
 function saveToStorage(employee, date, data) {
-  localStorage.setItem(storageKey(employee, date), JSON.stringify(data));
+  sbSet(storageKey(employee, date), data);
 }
 
 // 근무시간 계산 (야간 교대 포함)
@@ -1217,11 +1279,10 @@ function monthPlanKey(emp, year, month) {
   return `monthplan_${emp}_${year}-${String(month).padStart(2,'0')}`;
 }
 function getMonthPlan(emp, year, month) {
-  const raw = localStorage.getItem(monthPlanKey(emp, year, month));
-  return raw ? JSON.parse(raw) : null;
+  return sbGet(monthPlanKey(emp, year, month), null);
 }
 function saveMonthPlan(emp, year, month, data) {
-  localStorage.setItem(monthPlanKey(emp, year, month), JSON.stringify(data));
+  sbSet(monthPlanKey(emp, year, month), data);
 }
 
 // 대상월 계산: 오늘이 22일 이후면 다음다음달, 아니면 다음달
@@ -1424,10 +1485,13 @@ function renderCalendarHTML(y, m) {
       const rec = getRecord(emp, dateStr);
       if (rec?.checkIn) {
         workers.push({ emp, type: 'actual', shift: rec.checkIn <= '10:00' ? 'day' : 'afternoon' });
-      } else {
-        const plan = getMonthPlan(emp, y, m);
-        if (plan?.plannedDates?.includes(dateStr)) workers.push({ emp, type: 'plan', shift: plan.shift || 'day' });
+        return;
       }
+      const plan = getMonthPlan(emp, y, m);
+      const hasPlan = plan?.plannedDates?.includes(dateStr);
+      const hasWork = getWorkAssign(emp).some(t => t.date === dateStr);
+      if (hasPlan) workers.push({ emp, type: 'plan', shift: plan.shift || 'day' });
+      else if (hasWork) workers.push({ emp, type: 'work', shift: 'day' });
     });
 
     const empButtons = workers.map(w => {
@@ -1539,10 +1603,10 @@ function closeCalDrawer() {
 
 // ── 변경 신청 ──────────────────────────────────────────
 function getChangeReqs() {
-  return JSON.parse(localStorage.getItem('change_requests') || '[]');
+  return sbGet('change_requests', []);
 }
 function saveChangeReqs(arr) {
-  localStorage.setItem('change_requests', JSON.stringify(arr));
+  sbSet('change_requests', arr);
 }
 
 let dcTargetDate = '';
@@ -1743,30 +1807,37 @@ function renderChangeRequests() {
 }
 
 function approveReq(id) {
-  const reqs = getChangeReqs();
-  const req = reqs.find(r => r.id === id);
-  if (!req) return;
+  try {
+    const reqs = getChangeReqs();
+    const req = reqs.find(r => r.id === id);
+    if (!req) { showToast('신청 내역을 찾을 수 없습니다'); return; }
 
-  // 실제 계획에 반영
-  const [y, m] = req.date.slice(0,7).split('-').map(Number);
-  const plan = getMonthPlan(req.emp, y, m);
-  if (plan) {
-    if (!plan.dateOverrides) plan.dateOverrides = {};
-    if (req.type === 'cancel') {
-      plan.dateOverrides[req.date] = { type: 'cancel' };
-    } else {
-      const shiftKey = req.newShift === '오전조' ? 'day' : 'afternoon';
-      const shift = SHIFT_INFO[shiftKey];
-      plan.dateOverrides[req.date] = { type: 'shift', shiftLabel: req.newShift, inTime: shift.inTime, outTime: shift.outTime };
+    // 실제 계획에 반영
+    if (req.date) {
+      const [y, m] = req.date.slice(0,7).split('-').map(Number);
+      const plan = getMonthPlan(req.emp, y, m);
+      if (plan) {
+        if (!plan.dateOverrides) plan.dateOverrides = {};
+        if (req.type === 'cancel') {
+          plan.dateOverrides[req.date] = { type: 'cancel' };
+        } else {
+          const shiftKey = req.newShift === '오전조' ? 'day' : 'afternoon';
+          const shift = SHIFT_INFO[shiftKey];
+          plan.dateOverrides[req.date] = { type: 'shift', shiftLabel: req.newShift, inTime: shift.inTime, outTime: shift.outTime };
+        }
+        saveMonthPlan(req.emp, y, m, plan);
+      }
     }
-    saveMonthPlan(req.emp, y, m, plan);
-  }
 
-  req.status = 'approved';
-  req.processedAt = new Date().toISOString();
-  saveChangeReqs(reqs);
-  showToast('승인되었습니다. 계획에 반영되었습니다.');
-  renderChangeRequests();
+    req.status = 'approved';
+    req.processedAt = new Date().toISOString();
+    saveChangeReqs(reqs);
+    showToast('승인되었습니다. 계획에 반영되었습니다.');
+    renderChangeRequests();
+  } catch(e) {
+    console.error('approveReq 오류:', e);
+    showToast('승인 처리 중 오류가 발생했습니다: ' + e.message);
+  }
 }
 
 function rejectReq(id) {
@@ -1812,8 +1883,8 @@ function switchAdminTab(tab) {
 
 // ── 업무분장 ──────────────────────────────────────────
 function workAssignKey(emp) { return `workassign_${emp}`; }
-function getWorkAssign(emp) { return JSON.parse(localStorage.getItem(workAssignKey(emp)) || '[]'); }
-function saveWorkAssign(emp, tasks) { localStorage.setItem(workAssignKey(emp), JSON.stringify(tasks)); }
+function getWorkAssign(emp) { return sbGet(workAssignKey(emp), []); }
+function saveWorkAssign(emp, tasks) { sbSet(workAssignKey(emp), tasks); }
 
 function initWorkAssignTab() {
   renderWorkReqList();
@@ -2078,6 +2149,23 @@ function clearEmpWork(emp) {
   saveWorkAssign(emp, []);
   renderWorkCurrentStatus();
   showToast(`${emp}님 업무분장이 초기화되었습니다`);
+}
+
+function toggleWorkCurrentStatus() {
+  const el = document.getElementById('workCurrentStatus');
+  const icon = document.getElementById('workStatusToggleIcon');
+  const btn = document.getElementById('workStatusToggleBtn');
+  const isHidden = el.style.display === 'none';
+  if (isHidden) {
+    renderWorkCurrentStatus();
+    el.style.display = 'block';
+    icon.textContent = '▲';
+    btn.querySelector('span').textContent = '📋 저장된 업무분장 현황 닫기';
+  } else {
+    el.style.display = 'none';
+    icon.textContent = '▼';
+    btn.querySelector('span').textContent = '📋 저장된 업무분장 현황 보기';
+  }
 }
 
 function clearAllWorkAssign() {
@@ -2467,8 +2555,8 @@ function renderPublicCal() {
 let _workReqEmp = null;
 let _workReqRows = [];   // [{task,detail,hours,note}]
 
-function getWorkReqs() { return JSON.parse(localStorage.getItem('workassign_requests') || '[]'); }
-function saveWorkReqs(reqs) { localStorage.setItem('workassign_requests', JSON.stringify(reqs)); }
+function getWorkReqs() { return sbGet('workassign_requests', []); }
+function saveWorkReqs(reqs) { sbSet('workassign_requests', reqs); }
 
 function openWorkReqModal() {
   _workReqEmp = document.getElementById('myWorkName').textContent.replace('님','').trim();
@@ -2936,7 +3024,20 @@ function exportPlanCSV() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 로딩 화면 표시
+  const loading = document.createElement('div');
+  loading.id = 'sbLoading';
+  loading.innerHTML = `<div style="position:fixed;inset:0;z-index:9999;background:#F8FAFC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+    <div style="width:40px;height:40px;border:4px solid #E2E8F0;border-top-color:#2C4A6E;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+    <p style="font-size:14px;font-weight:700;color:#64748B">데이터 불러오는 중...</p>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>`;
+  document.body.appendChild(loading);
+
+  await sbLoadAll();
+
+  loading.remove();
   initMain();
 });
 </script>
