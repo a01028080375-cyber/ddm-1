@@ -291,17 +291,17 @@
   <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 16px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0">
     <div style="display:flex;align-items:center;gap:5px">
       <span style="width:10px;height:10px;border-radius:3px;background:#DCFCE7;display:inline-block;border:1px solid #86EFAC"></span>
-      <span style="font-size:11px;color:#166534;font-weight:600">오전조</span>
+      <span style="font-size:11px;color:#166534;font-weight:600">오전</span>
     </div>
     <div style="display:flex;align-items:center;gap:5px">
       <span style="width:10px;height:10px;border-radius:3px;background:#FFEDD5;display:inline-block;border:1px solid #FED7AA"></span>
-      <span style="font-size:11px;color:#C2410C;font-weight:600">오후조</span>
+      <span style="font-size:11px;color:#C2410C;font-weight:600">오후</span>
     </div>
     <div style="display:flex;align-items:center;gap:5px">
       <span style="width:10px;height:10px;border-radius:50%;background:#4338CA;display:inline-block"></span>
       <span style="font-size:11px;color:#475569;font-weight:600">오늘</span>
     </div>
-    <span style="font-size:10px;color:#94A3B8">이름 클릭 → 업무분장</span>
+    <span style="font-size:10px;color:#94A3B8;white-space:nowrap">이름 클릭 → 업무분장</span>
   </div>
 </div>
 
@@ -1128,7 +1128,7 @@ function initMain() {
   const today = new Date();
   const days = ['일','월','화','수','목','금','토'];
   document.getElementById('todayDate').textContent =
-    `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 (${days[today.getDay()]})`;
+    `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일(${days[today.getDay()]})`;
 
   const grid = document.getElementById('employeeGrid');
   grid.innerHTML = '';
@@ -3348,7 +3348,7 @@ function movePublicCal(dir) {
 }
 function renderPublicCal() {
   const y = _pubCalYear, m = _pubCalMonth;
-  document.getElementById('pubCalTitle').textContent = `${y}년 ${m}월`;
+  document.getElementById('pubCalTitle').innerHTML = `${y}년<br>${m}월`;
   const firstDay = new Date(y, m - 1, 1).getDay();
   const daysInMonth = new Date(y, m, 0).getDate();
   const weeks = Math.ceil((firstDay + daysInMonth) / 7);
