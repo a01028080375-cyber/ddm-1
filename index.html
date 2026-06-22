@@ -655,7 +655,7 @@
           <thead>
             <tr>
               <th class="text-left">이름</th>
-              <th class="text-left">근무조</th>
+              <th class="text-left">근무</th>
               <th class="text-left">상태</th>
               <th class="text-left">출근</th>
               <th class="text-left">퇴근</th>
@@ -727,9 +727,8 @@
     <div class="flex items-center gap-3 mb-4">
       <select id="adminPlanMonthSelect" onchange="renderAdminPlanTable()"
         class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
-      <span class="text-xs" style="color:#94A3B8">월 계획 현황</span>
       <button id="planLockToggleBtn" onclick="togglePlanLock()" class="ml-auto text-xs font-bold px-3 py-2 rounded-xl"></button>
-      <button onclick="exportPlanCSV()" class="text-xs font-bold px-3 py-2 rounded-xl text-white" style="background:var(--indigo)">계획 CSV</button>
+      <button onclick="exportPlanCSV()" class="text-xs font-bold px-3 py-2 rounded-xl text-white" style="background:var(--indigo)">CSV</button>
     </div>
 
     <div class="card p-4 mb-4 flex items-center gap-4">
@@ -806,11 +805,11 @@
       <table style="border-collapse:collapse;font-size:12px;min-width:900px;width:100%">
         <thead><tr>
           <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700;white-space:nowrap;position:sticky;top:0;background:#1E2D3D;z-index:2">날짜</th>
-          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">근무시간<br>(오전)</th>
+          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2"><span style="white-space:nowrap">근무시간</span><br><span style="white-space:nowrap">(오전)</span></th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">강의</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">보조&amp;<br>안내</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">상담외</th>
-          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">근무시간<br>(오후)</th>
+          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2"><span style="white-space:nowrap">근무시간</span><br><span style="white-space:nowrap">(오후)</span></th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">강의</th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">보조&amp;<br>안내</th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">상담외</th>
@@ -3772,7 +3771,7 @@ function renderTodayDashboard() {
     ? allList.map(item => {
         const shiftColor = !item.hasPlan ? '#7E22CE' : (item.shiftLabel === '오전조' ? '#166534' : '#C2410C');
         const shiftBg2 = !item.hasPlan ? '#F3E8FF' : (item.shiftLabel === '오전조' ? '#DCFCE7' : '#FFEDD5');
-        const shiftText = !item.hasPlan ? '미계획' : item.shiftLabel;
+        const shiftText = !item.hasPlan ? '미계획' : item.shiftLabel.replace('조','');
         return `<tr>
           <td style="${C}font-weight:700;color:#0F172A">${item.emp}</td>
           <td style="${C}"><span style="font-size:11px;font-weight:700;color:${shiftColor};background:${shiftBg2};padding:2px 6px;border-radius:6px">${shiftText}</span></td>
@@ -3800,7 +3799,7 @@ function renderAdminPlanTable() {
 
   const locked = isMonthLocked(y, m);
   const lockBtn = document.getElementById('planLockToggleBtn');
-  lockBtn.textContent = locked ? '🔓 마감 해제' : '🔒 이번달 마감';
+  lockBtn.textContent = locked ? '🔓 마감 해제' : '🔒 계획마감';
   lockBtn.style.background = locked ? '#ECFDF5' : '#FEF2F2';
   lockBtn.style.color = locked ? '#166534' : '#DC2626';
   lockBtn.style.border = locked ? '1.5px solid #86EFAC' : '1.5px solid #FECACA';
@@ -3822,7 +3821,7 @@ function renderAdminPlanTable() {
     return `<tr>
       ${nameCell}
       <td style="text-align:center">
-        <span style="font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;${plan.shift==='day' ? 'background:#FEF3C7;color:#B45309' : 'background:#EEF2FF;color:#4F46E5'}">${plan.shiftLabel}</span>
+        <span style="font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;${plan.shift==='day' ? 'background:#FEF3C7;color:#B45309' : 'background:#EEF2FF;color:#4F46E5'}">${plan.shiftLabel.replace('조','')}</span>
       </td>
       <td style="text-align:center;font-weight:800;color:#166534">${totalHours}h</td>
       <td style="text-align:center;font-weight:800;color:#4F46E5">${plan.plannedDates.length}일</td>
