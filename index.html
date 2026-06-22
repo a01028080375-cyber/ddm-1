@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>동대문 DDP 출퇴근 시스템</title>
+  <title>동대문센터 업무관리</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -254,7 +254,7 @@
   <div style="background:linear-gradient(135deg,#1E2D3D 0%,#2C4A6E 100%);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
     <div>
       <p style="font-size:10px;font-weight:600;color:#94C5E8;letter-spacing:2px;margin-bottom:1px">SCHEDULE</p>
-      <h2 style="font-size:17px;font-weight:900;color:#fff;margin:0">근무 캘린더</h2>
+      <h2 style="font-size:17px;font-weight:900;color:#fff;margin:0"><span style="white-space:nowrap">근무</span><br><span style="white-space:nowrap">캘린더</span></h2>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <button onclick="movePublicCal(-1)" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
@@ -264,7 +264,7 @@
       <button onclick="movePublicCal(1)" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
         <svg width="14" height="14" fill="none" stroke="#fff" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
       </button>
-      <button onclick="closePublicCal()" style="padding:6px 12px;border-radius:20px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);cursor:pointer;font-size:11px;font-weight:700;color:#fff;margin-left:4px">
+      <button onclick="closePublicCal()" style="padding:6px 12px;border-radius:20px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);cursor:pointer;font-size:11px;font-weight:700;color:#fff;margin-left:4px;white-space:nowrap">
         ← 이전
       </button>
     </div>
@@ -598,7 +598,7 @@
     <button id="adminTab_today" onclick="switchAdminTab('today')"
       style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8">오늘현황</button>
     <button id="adminTab_overall" onclick="switchAdminTab('overall')"
-      style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8">전체일정표</button>
+      style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8">전체일정</button>
     <button id="adminTab_att" onclick="switchAdminTab('att')"
       style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8">출퇴근</button>
     <button id="adminTab_req" onclick="switchAdminTab('req')"
@@ -671,7 +671,6 @@
   <div id="adminPanel_att" class="hidden flex-1 overflow-y-auto px-4 py-4">
     <div class="flex items-center gap-3 mb-4">
       <select id="adminMonthSelect" onchange="renderAdminTable()" class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
-      <span class="text-xs" style="color:#94A3B8">월별 출퇴근 대시보드</span>
     </div>
 
     <!-- 요약 카드 -->
@@ -727,7 +726,7 @@
     <div class="flex items-center gap-3 mb-4">
       <select id="adminPlanMonthSelect" onchange="renderAdminPlanTable()"
         class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
-      <button id="planLockToggleBtn" onclick="togglePlanLock()" class="ml-auto text-xs font-bold px-3 py-2 rounded-xl"></button>
+      <button id="planLockToggleBtn" onclick="togglePlanLock()" class="ml-auto text-xs font-bold px-3 py-2 rounded-xl" style="white-space:nowrap"></button>
       <button onclick="exportPlanCSV()" class="text-xs font-bold px-3 py-2 rounded-xl text-white" style="background:var(--indigo)">CSV</button>
     </div>
 
@@ -799,7 +798,6 @@
     <div class="flex items-center gap-3 mb-4">
       <select id="overallMonthSelect" onchange="renderOverallScheduleTable()"
         class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
-      <span class="text-xs" style="color:#94A3B8">날짜별 전체 근무 현황</span>
     </div>
     <div class="card" style="overflow:auto;padding:0;max-height:70vh">
       <table style="border-collapse:collapse;font-size:12px;min-width:900px;width:100%">
@@ -1125,8 +1123,8 @@ function initMain() {
   clearJune2026Schedule();
   const today = new Date();
   const days = ['일','월','화','수','목','금','토'];
-  document.getElementById('todayDate').textContent =
-    `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 (${days[today.getDay()]})`;
+  document.getElementById('todayDate').innerHTML =
+    `${today.getFullYear()}년<br>${today.getMonth()+1}월 ${today.getDate()}일 (${days[today.getDay()]})`;
 
   const grid = document.getElementById('employeeGrid');
   grid.innerHTML = '';
