@@ -9,7 +9,7 @@
   <meta property="og:site_name" content="동대문센터 업무관리" />
   <meta name="description" content="동대문센터 출퇴근 및 업무관리 시스템" />
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#1E2D3D" />
+  <meta name="theme-color" content="#EEF2FF" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -586,7 +586,7 @@
   <header class="app-header px-5 py-4 flex items-center shrink-0">
     <div class="flex-1">
       <p class="text-xs font-semibold tracking-widest" style="color:#8FA3B1">ADMIN</p>
-      <h2 class="text-lg font-black" style="color:#1E2D3D;white-space:nowrap">대시보드</h2>
+      <h2 class="text-lg font-black" style="color:#1E2D3D;white-space:nowrap">관리자 모드</h2>
     </div>
     <div class="flex items-center gap-2">
       <button onclick="closeAdmin()" style="padding:6px 12px;border-radius:10px;background:#DDE3EA;border:none;cursor:pointer;font-size:12px;font-weight:700;color:#3A5A72;display:flex;align-items:center;gap:4px">
@@ -655,15 +655,15 @@
       </div>
 
       <!-- 직원 현황 테이블 -->
-      <div class="card" style="overflow-x:auto">
+      <div class="card" style="overflow:auto;max-height:65vh">
         <table class="w-full data-table" style="border-collapse:collapse;white-space:nowrap">
           <thead>
-            <tr>
-              <th class="text-left">이름</th>
-              <th class="text-left">근무</th>
-              <th class="text-left">상태</th>
-              <th class="text-left">출근</th>
-              <th class="text-left">퇴근</th>
+            <tr style="background:#1E2D3D">
+              <th class="text-left" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">이름</th>
+              <th class="text-left" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">근무</th>
+              <th class="text-left" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">상태</th>
+              <th class="text-left" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">출근</th>
+              <th class="text-left" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">퇴근</th>
             </tr>
           </thead>
           <tbody id="todayTableBody"></tbody>
@@ -696,7 +696,7 @@
     </div>
 
     <!-- 직원×날짜 매트릭스 -->
-    <div class="card" style="overflow-x:auto;padding:0">
+    <div class="card" style="overflow:auto;padding:0;max-height:65vh">
       <table style="border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%">
         <thead id="attMatrixHead"></thead>
         <tbody id="attMatrixBody"></tbody>
@@ -714,7 +714,7 @@
       <span id="calMonthLabel" class="flex-1 text-center text-sm font-black" style="color:#0F172A"></span>
       <button onclick="changeCalMonth(1)" class="p-2 rounded-xl text-xl font-bold" style="background:#F1F5F9;color:#64748B">&#8250;</button>
     </div>
-    <div class="grid grid-cols-7" style="background:#fff;border-bottom:1px solid #E2E8F0">
+    <div class="grid grid-cols-7 sticky z-10" style="background:#fff;border-bottom:1px solid #E2E8F0;top:53px">
       <div class="py-2 text-center text-xs font-bold" style="color:#F43F5E">일</div>
       <div class="py-2 text-center text-xs font-bold" style="color:#64748B">월</div>
       <div class="py-2 text-center text-xs font-bold" style="color:#64748B">화</div>
@@ -749,15 +749,15 @@
       </div>
     </div>
 
-    <div class="card overflow-x-auto">
+    <div class="card" style="overflow:auto;max-height:65vh">
       <table class="w-full data-table" style="border-collapse:collapse">
         <thead>
-          <tr>
-            <th class="text-left">이름</th>
-            <th class="text-center">조</th>
-            <th class="text-center">근무시간</th>
-            <th class="text-center">계획일수</th>
-            <th class="text-center">상태</th>
+          <tr style="background:#1E2D3D">
+            <th class="text-left" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">이름</th>
+            <th class="text-center" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">조</th>
+            <th class="text-center" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">근무시간</th>
+            <th class="text-center" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">계획일수</th>
+            <th class="text-center" style="color:#94C5E8;position:sticky;top:0;background:#1E2D3D;z-index:2">상태</th>
           </tr>
         </thead>
         <tbody id="adminPlanTableBody"></tbody>
@@ -1556,8 +1556,8 @@ function renderAdminTable() {
 
   const head = document.getElementById('attMatrixHead');
   head.innerHTML = `<tr style="background:#1E2D3D">
-    <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700;position:sticky;left:0;background:#1E2D3D;z-index:1;min-width:90px">직원</th>
-    ${dayHeaders.map(h => `<th style="padding:8px 4px;color:${h.dow===0?'#FDA4AF':h.dow===6?'#93C5FD':'#94C5E8'};text-align:center;font-weight:700;min-width:34px">${h.d}</th>`).join('')}
+    <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700;position:sticky;left:0;top:0;background:#1E2D3D;z-index:3;min-width:90px">직원</th>
+    ${dayHeaders.map(h => `<th style="padding:8px 4px;color:${h.dow===0?'#FDA4AF':h.dow===6?'#93C5FD':'#94C5E8'};text-align:center;font-weight:700;min-width:34px;position:sticky;top:0;background:#1E2D3D;z-index:2">${h.d}</th>`).join('')}
   </tr>`;
 
   const body = document.getElementById('attMatrixBody');
