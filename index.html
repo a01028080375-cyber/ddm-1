@@ -9,6 +9,12 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
 
+    /* 모바일에서는 캘린더 셀을 간단히(인원 배지+점) 보여주고, 탭하면 하단 드로어로 상세 표시 */
+    @media (max-width: 640px) {
+      .cal-detail { display: none !important; }
+      .cal-compact { display: flex !important; }
+    }
+
     :root {
       --navy:   #0F172A;
       --navy2:  #1E293B;
@@ -2178,13 +2184,26 @@ function renderCalendarHTML(y, m) {
       const hoursTag = w.type === 'actual'
         ? (w.planTime ? `<span style="font-size:9px;font-weight:700;color:${fc};opacity:0.9;flex-shrink:0">${w.isLate ? '지각 ' : ''}${w.actualTime}</span>` : `<span style="font-size:9px;font-weight:700;color:${fc};opacity:0.85;flex-shrink:0">${w.actualTime}</span>`)
         : (w.hours !== '' && w.hours !== undefined ? `<span style="font-size:9px;font-weight:700;color:${fc};opacity:0.85;flex-shrink:0">${w.hours}h</span>` : '');
-      return `<button onclick="openMyWorkModal('${w.emp}','${dateStr}')"
+      return `<button onclick="event.stopPropagation();openMyWorkModal('${w.emp}','${dateStr}')"
         style="display:flex;align-items:center;gap:3px;width:100%;padding:2px 5px;border-radius:5px;background:${bg};border:none;cursor:pointer;margin-bottom:2px;overflow:hidden">
         <span style="width:5px;height:5px;border-radius:50%;background:${dot};flex-shrink:0"></span>
         <span style="font-size:11px;font-weight:700;color:${fc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:left">${w.emp}</span>
         ${hoursTag}
       </button>`;
     }).join('');
+
+    const compactDots = workers.slice(0, 6).map(w => {
+      const isMorning = w.shift === 'day';
+      const late = w.type === 'actual' && w.isLate;
+      const dotColor = late ? '#EAB308' : (isMorning ? '#22C55E' : '#F97316');
+      return `<span style="width:6px;height:6px;border-radius:50%;background:${dotColor};display:inline-block"></span>`;
+    }).join('');
+    const compactView = workers.length > 0
+      ? `<div class="cal-compact" style="display:none;flex-direction:column;align-items:center;gap:2px;padding-top:2px">
+          <span style="font-size:10px;font-weight:800;color:#4338CA;background:#EEF2FF;border-radius:8px;padding:1px 6px">${workers.length}명</span>
+          <div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center">${compactDots}</div>
+        </div>`
+      : '';
 
     let cellBg = '#fff';
     if (isToday) cellBg = '#EEF2FF';
@@ -2217,10 +2236,13 @@ function renderCalendarHTML(y, m) {
       </div>
     </div>`;
 
-    html += `<div style="border-right:1px solid #EEF2F7;border-bottom:1px solid #EEF2F7;padding:6px 5px;background:${cellBg};vertical-align:top">
+    html += `<div onclick="openCalDrawer('${dateStr}')" style="border-right:1px solid #EEF2F7;border-bottom:1px solid #EEF2F7;padding:6px 5px;background:${cellBg};vertical-align:top;cursor:pointer">
       <div style="margin-bottom:4px">${todayCircle}</div>
-      ${daySummary}
-      ${empButtons}
+      <div class="cal-detail">
+        ${daySummary}
+        ${empButtons}
+      </div>
+      ${compactView}
     </div>`;
   }
 
