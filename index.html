@@ -274,18 +274,18 @@
     <div style="text-align:center;font-size:11px;font-weight:800;padding:8px 0;color:#93C5FD">토</div>
   </div>
   <!-- 캘린더 그리드 -->
-  <div id="pubCalWrapper" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
-    <div id="pubCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);flex:1"></div>
+  <div id="pubCalWrapper" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+    <div id="pubCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(80px,auto)"></div>
   </div>
   <!-- 범례 -->
   <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 16px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0">
     <div style="display:flex;align-items:center;gap:5px">
       <span style="width:10px;height:10px;border-radius:3px;background:#DCFCE7;display:inline-block;border:1px solid #86EFAC"></span>
-      <span style="font-size:11px;color:#475569;font-weight:600">오전조</span>
+      <span style="font-size:11px;color:#166534;font-weight:600">오전조</span>
     </div>
     <div style="display:flex;align-items:center;gap:5px">
       <span style="width:10px;height:10px;border-radius:3px;background:#FFEDD5;display:inline-block;border:1px solid #FED7AA"></span>
-      <span style="font-size:11px;color:#475569;font-weight:600">오후조</span>
+      <span style="font-size:11px;color:#C2410C;font-weight:600">오후조</span>
     </div>
     <div style="display:flex;align-items:center;gap:5px">
       <span style="width:10px;height:10px;border-radius:50%;background:#4338CA;display:inline-block"></span>
@@ -359,6 +359,27 @@
 
   <div class="px-4 py-5 space-y-4">
 
+    <!-- 마감 안내 배너 -->
+    <div id="planLockBanner" class="hidden" style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:14px;padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">🔒</span>
+        <span style="font-size:13px;font-weight:700;color:#BE123C">이 달의 계획은 마감되었습니다. 수정이 필요하면 아래 "날짜별 수정 요청"을 이용해주세요.</span>
+      </div>
+      <button onclick="forceResyncData()" style="margin-top:8px;font-size:11px;font-weight:700;color:#9A3412;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:5px 10px;cursor:pointer">
+        화면이 잘못 나오면 여기를 눌러 새로고침
+      </button>
+    </div>
+
+    <!-- 확정 일정 (제출 즉시 반영되고, 변경신청 승인 시 계속 갱신) -->
+    <div id="finalScheduleCard" class="hidden card p-5" style="border-color:#A7F3D0;background:#F0FDF4">
+      <div class="flex justify-between items-center mb-3">
+        <p class="text-sm font-bold" style="color:#065F46">✅ 확정 일정</p>
+        <span id="finalScheduleCount" class="text-xs font-bold px-3 py-1 rounded-full" style="background:#DCFCE7;color:#166534">0일</span>
+      </div>
+      <p class="text-xs mb-3" style="color:#16A34A">계획 제출 또는 변경신청 승인 시 자동으로 갱신됩니다</p>
+      <div id="finalScheduleDates" class="flex flex-wrap gap-2"></div>
+    </div>
+
     <!-- 대상 월 -->
     <div class="card p-5">
       <p class="text-xs font-semibold tracking-wide mb-3 uppercase" style="color:#94A3B8">근무 대상 월</p>
@@ -379,7 +400,7 @@
         </button>
         <button id="shiftBtn_afternoon" onclick="selectShift('afternoon')"
           class="py-5 rounded-2xl border-2 text-base font-bold transition-all" style="border-color:#E2E8F0;background:#fff;color:#94A3B8">
-          오후조<br><span class="text-xs font-normal">11:30 ~ 17:00</span>
+          오후조<br><span class="text-xs font-normal">11:00 ~ 16:30</span>
         </button>
       </div>
     </div>
@@ -410,13 +431,36 @@
         <span id="planDayCount" class="text-xs font-bold px-3 py-1 rounded-full" style="background:var(--indigo-light);color:var(--indigo)">0일</span>
       </div>
       <div id="planPreviewDates" class="flex flex-wrap gap-2"></div>
+      <div id="planHolidayNote" class="hidden mt-3 text-xs" style="color:#94A3B8"></div>
+    </div>
+
+    <!-- 업무분장 입력 (선택) -->
+    <div class="card p-5">
+      <div class="flex justify-between items-center mb-2">
+        <p class="text-sm font-bold" style="color:#0F172A">업무분장 입력 (선택)</p>
+        <button onclick="applyMpTaskToAll()" class="text-xs font-bold px-3 py-1.5 rounded-xl" style="background:#EEF2FF;color:#4338CA">↓ 전체 동일 적용</button>
+      </div>
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs" style="color:#94A3B8">날짜별 업무 내용을 입력하면 업무분장에도 함께 등록됩니다</p>
+        <span id="mpTaskHoursTotal" class="text-xs font-bold px-2.5 py-1 rounded-lg flex-shrink-0" style="background:#ECFDF5;color:#166534">총 0h</span>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span id="mpHoursTargetLabel" class="text-xs font-semibold" style="color:#94A3B8">월 목표 60시간 중 0시간</span>
+          <span id="mpHoursTargetPct" class="text-xs font-bold" style="color:#94A3B8">0%</span>
+        </div>
+        <div style="background:#F1F5F9;border-radius:20px;height:8px;overflow:hidden">
+          <div id="mpHoursTargetBar" style="height:100%;width:0%;border-radius:20px;background:#6366F1;transition:width .2s"></div>
+        </div>
+      </div>
+      <div id="mpTaskList" class="space-y-2"></div>
     </div>
 
     <!-- 제출 버튼 -->
-    <button onclick="submitMonthPlan()" class="btn-primary w-full py-5 rounded-2xl text-base">
+    <button id="planSubmitBtn" onclick="submitMonthPlan()" class="btn-primary w-full py-5 rounded-2xl text-base">
       계획 제출하기
     </button>
-    <p class="text-center text-xs" style="color:#94A3B8">제출 후에도 수정 가능합니다</p>
+    <p id="planSubmitHint" class="text-center text-xs" style="color:#94A3B8">제출 후에도 수정 가능합니다 (마감 전까지)</p>
 
     <!-- 날짜별 수정 요청 -->
     <div id="dateChangeSection" class="hidden card p-5" style="border-color:#FED7AA">
@@ -434,28 +478,39 @@
 <div id="dateChangeModal" class="hidden fixed inset-0 z-50 flex items-end fade-in" style="background:rgba(15,23,42,.6);backdrop-filter:blur(4px)">
   <div class="bg-white w-full rounded-t-3xl p-6 slide-in" style="box-shadow:0 -8px 40px rgba(15,23,42,.2)">
     <div class="w-10 h-1 rounded-full mx-auto mb-5" style="background:#E2E8F0"></div>
-    <h3 class="text-base font-black mb-0.5" style="color:#0F172A">날짜 수정 요청</h3>
+    <h3 class="text-base font-black mb-0.5" style="color:#0F172A">수정 요청</h3>
     <p id="dcModalDate" class="text-xs mb-5" style="color:#94A3B8"></p>
-    <p class="text-xs font-semibold tracking-wide mb-3 uppercase" style="color:#64748B">수정 유형</p>
-    <div class="space-y-2 mb-5">
-      <button onclick="selectChangeType('cancel')" id="dcType_cancel"
-        class="w-full py-4 rounded-2xl border-2 text-sm font-semibold text-left px-4 transition-all" style="border-color:#E2E8F0;color:#64748B">
-        근무 취소 (결근 처리)
-      </button>
-      <button onclick="selectChangeType('shift')" id="dcType_shift"
-        class="w-full py-4 rounded-2xl border-2 text-sm font-semibold text-left px-4 transition-all" style="border-color:#E2E8F0;color:#64748B">
-        조 변경 (오전조 ↔ 오후조)
-      </button>
+
+    <label class="text-xs font-semibold block mb-1.5" style="color:#64748B">변경할 날짜</label>
+    <input id="dcNewDate" type="date" class="w-full px-3 py-3 text-sm rounded-xl mb-4" style="border:1.5px solid #E2E8F0;color:#1E2D3D">
+
+    <p class="text-xs font-semibold tracking-wide mb-3 uppercase" style="color:#64748B">근무 조 (빠른 선택)</p>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <button onclick="selectNewShift('오전조')" id="dcRsShift_morning"
+        class="py-4 rounded-2xl border-2 text-sm font-bold transition-all" style="border-color:#E2E8F0;color:#94A3B8">오전조<br><span class="text-xs font-normal">09:00~14:30</span></button>
+      <button onclick="selectNewShift('오후조')" id="dcRsShift_afternoon"
+        class="py-4 rounded-2xl border-2 text-sm font-bold transition-all" style="border-color:#E2E8F0;color:#94A3B8">오후조<br><span class="text-xs font-normal">11:00~16:30</span></button>
     </div>
-    <div id="dcShiftSelect" class="hidden mb-5">
-      <p class="text-xs font-semibold tracking-wide mb-3 uppercase" style="color:#64748B">변경할 조</p>
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="selectNewShift('오전조')" id="dcShift_morning"
-          class="py-4 rounded-2xl border-2 text-sm font-bold transition-all" style="border-color:#E2E8F0;color:#94A3B8">오전조<br><span class="text-xs font-normal">09:00~14:30</span></button>
-        <button onclick="selectNewShift('오후조')" id="dcShift_afternoon"
-          class="py-4 rounded-2xl border-2 text-sm font-bold transition-all" style="border-color:#E2E8F0;color:#94A3B8">오후조<br><span class="text-xs font-normal">11:30~17:00</span></button>
+
+    <div class="flex items-center justify-between mb-2">
+      <label class="text-xs font-semibold" style="color:#64748B">업무분장 입력 (선택)</label>
+      <span id="dcTaskHoursTotal" class="text-xs font-bold px-2.5 py-1 rounded-lg" style="background:#ECFDF5;color:#166534">총 0h</span>
+    </div>
+    <div id="dcTaskChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+    <div style="border:1.5px solid #E2E8F0;border-radius:12px;padding:10px;margin-bottom:16px">
+      <div id="dcTaskBtns" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+        <button type="button" onclick="setDcDraftTask('강의')" class="dc-task-btn" data-task="강의" style="padding:6px 13px;border-radius:16px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:12px;font-weight:700;cursor:pointer">강의</button>
+        <button type="button" onclick="setDcDraftTask('안내')" class="dc-task-btn" data-task="안내" style="padding:6px 13px;border-radius:16px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:12px;font-weight:700;cursor:pointer">안내</button>
+        <button type="button" onclick="setDcDraftTask('상담')" class="dc-task-btn" data-task="상담" style="padding:6px 13px;border-radius:16px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:12px;font-weight:700;cursor:pointer">상담</button>
+        <button type="button" onclick="setDcDraftTask('커뮤니티')" class="dc-task-btn" data-task="커뮤니티" style="padding:6px 13px;border-radius:16px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:12px;font-weight:700;cursor:pointer">커뮤니티</button>
+        <button type="button" onclick="setDcDraftTask('기타')" class="dc-task-btn" data-task="기타" style="padding:6px 13px;border-radius:16px;border:1.5px solid #E2E8F0;background:#F8FAFC;color:#64748B;font-size:12px;font-weight:700;cursor:pointer">기타</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <input id="dcDraftHours" type="number" min="0" step="0.5" placeholder="시간" class="flex-1 px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#1E2D3D">
+        <button type="button" onclick="addDcTaskItem()" style="padding:8px 16px;border-radius:10px;background:#4338CA;color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">+ 추가</button>
       </div>
     </div>
+
     <textarea id="dcNote" placeholder="사유 입력 (선택)" rows="2"
       class="w-full px-4 py-3 text-sm mb-4 resize-none" style="border:1.5px solid #E2E8F0;border-radius:12px;color:#0F172A"></textarea>
     <div class="flex gap-3">
@@ -494,8 +549,8 @@
     </div>
   </header>
 
-  <!-- 탭 (2줄 × 3열, 탭별 색상) -->
-  <div class="shrink-0 grid grid-cols-3" style="border-bottom:2px solid #E2E8F0">
+  <!-- 탭 (2줄 × 4열, 탭별 색상) -->
+  <div class="shrink-0 grid grid-cols-4" style="border-bottom:2px solid #E2E8F0">
     <button id="adminTab_today" onclick="switchAdminTab('today')"
       style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid #2563EB;background:#EFF6FF;color:#1D4ED8">오늘현황</button>
     <button id="adminTab_att" onclick="switchAdminTab('att')"
@@ -503,13 +558,15 @@
     <button id="adminTab_cal" onclick="switchAdminTab('cal')"
       style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8">캘린더</button>
     <button id="adminTab_plan" onclick="switchAdminTab('plan')"
-      style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8;border-top:1px solid #E2E8F0">월간계획</button>
+      style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8">월간계획</button>
     <button id="adminTab_req" onclick="switchAdminTab('req')"
       style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8;border-top:1px solid #E2E8F0;position:relative">
       변경신청<span id="reqBadge" class="hidden absolute top-1 right-2 w-2 h-2 rounded-full" style="background:#F43F5E"></span>
     </button>
     <button id="adminTab_work" onclick="switchAdminTab('work')"
       style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8;border-top:1px solid #E2E8F0">업무분장</button>
+    <button id="adminTab_emp" onclick="switchAdminTab('emp')"
+      style="padding:10px 4px;font-size:12px;font-weight:800;border:none;cursor:pointer;border-bottom:3px solid transparent;background:#F8FAFC;color:#94A3B8;border-top:1px solid #E2E8F0">직원관리</button>
   </div>
 
   <!-- 오늘 현황 탭 -->
@@ -535,7 +592,7 @@
         <div class="kpi-card">
           <div class="text-xs font-semibold mb-2" style="color:#94A3B8;letter-spacing:.5px">이번달 총 근무일수</div>
           <div id="kpi_monthdays" class="text-2xl font-black" style="color:#0F172A">0일</div>
-          <div class="text-xs mt-1" style="color:#94A3B8">21명 합산</div>
+          <div id="kpi_monthdays_sub" class="text-xs mt-1" style="color:#94A3B8">전직원 합산</div>
         </div>
         <div class="kpi-card">
           <div class="text-xs font-semibold mb-2" style="color:#94A3B8;letter-spacing:.5px">오늘 총 출근율</div>
@@ -568,22 +625,35 @@
   <div id="adminPanel_att" class="hidden flex-1 overflow-y-auto px-4 py-4">
     <div class="flex items-center gap-3 mb-4">
       <select id="adminMonthSelect" onchange="renderAdminTable()" class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
-      <span class="text-xs" style="color:#94A3B8">월 전체 기록</span>
+      <span class="text-xs" style="color:#94A3B8">월별 출퇴근 대시보드</span>
     </div>
-    <div class="card overflow-x-auto">
-      <table class="w-full data-table" style="border-collapse:collapse">
-        <thead>
-          <tr>
-            <th class="text-left">날짜</th>
-            <th class="text-left">이름</th>
-            <th class="text-left">출근</th>
-            <th class="text-left">퇴근</th>
-            <th class="text-left">근무시간</th>
-          </tr>
-        </thead>
-        <tbody id="adminTableBody"></tbody>
+
+    <!-- 요약 카드 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">출근율</div><div id="attRateVal" class="text-xl font-black" style="color:var(--indigo)">0%</div></div>
+      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">정상출근</div><div id="attPresentVal" class="text-xl font-black" style="color:#16A34A">0</div></div>
+      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">지각</div><div id="attLateVal" class="text-xl font-black" style="color:#D97706">0</div></div>
+      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">결근</div><div id="attAbsentVal" class="text-xl font-black" style="color:#DC2626">0</div></div>
+    </div>
+
+    <!-- 범례 -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;font-size:11px;color:#64748B">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#16A34A;display:inline-block"></span>정상</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#D97706;display:inline-block"></span>지각</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#DC2626;display:inline-block"></span>결근</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:1px;border:1.5px solid #CBD5E1;display:inline-block"></span>예정/없음</span>
+    </div>
+
+    <!-- 직원×날짜 매트릭스 -->
+    <div class="card" style="overflow-x:auto;padding:0">
+      <table style="border-collapse:collapse;font-size:11px;white-space:nowrap">
+        <thead id="attMatrixHead"></thead>
+        <tbody id="attMatrixBody"></tbody>
       </table>
     </div>
+
+    <!-- 클릭 상세 -->
+    <div id="attDetailBox" class="hidden card p-4 mt-3"></div>
   </div>
 
   <!-- 캘린더 탭 -->
@@ -621,7 +691,8 @@
       <select id="adminPlanMonthSelect" onchange="renderAdminPlanTable()"
         class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
       <span class="text-xs" style="color:#94A3B8">월 계획 현황</span>
-      <button onclick="exportPlanCSV()" class="ml-auto text-xs font-bold px-3 py-2 rounded-xl text-white" style="background:var(--indigo)">계획 CSV</button>
+      <button id="planLockToggleBtn" onclick="togglePlanLock()" class="ml-auto text-xs font-bold px-3 py-2 rounded-xl"></button>
+      <button onclick="exportPlanCSV()" class="text-xs font-bold px-3 py-2 rounded-xl text-white" style="background:var(--indigo)">계획 CSV</button>
     </div>
 
     <div class="card p-4 mb-4 flex items-center gap-4">
@@ -669,69 +740,12 @@
   <div id="adminPanel_work" class="hidden flex-1 overflow-y-auto" style="background:var(--bg)">
 
 
-    <!-- 파일 업로드 섹션 -->
     <div style="padding:16px">
 
       <!-- 헤더 -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
         <span style="display:inline-block;width:4px;height:20px;background:#2C4A6E;border-radius:3px"></span>
-        <span style="font-size:15px;font-weight:800;color:#1E2D3D">업무분장 파일 업로드</span>
-      </div>
-
-      <!-- 서식 안내 -->
-      <div style="background:#F0F9FF;border:1.5px solid #BAE6FD;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#0369A1;line-height:1.8">
-        <div style="font-weight:800;margin-bottom:4px;color:#0C4A6E">📋 파일 형식 안내</div>
-        <div>• CSV 또는 Excel(.xlsx / .xls) 파일 지원</div>
-        <div style="color:#64748B;margin-top:2px">• 열 이름(헤더)으로 자동 인식 — 열 순서 무관</div>
-        <div style="color:#64748B">• 날짜 형식: <strong>2026-06-01</strong> 또는 <strong>2026.6.1</strong> 모두 가능</div>
-        <div style="color:#64748B">• 업무명: 자유 입력 가능</div>
-        <div style="color:#64748B">• 비고 열 없어도 됨</div>
-      </div>
-
-      <!-- 템플릿 다운로드 -->
-      <button onclick="downloadWorkTemplate()" style="width:100%;padding:11px;border-radius:12px;border:2px dashed #94A3B8;background:#F8FAFC;color:#475569;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        서식 파일 다운로드 (.csv)
-      </button>
-
-      <!-- 업로드 영역 -->
-      <label for="workFileInput" id="workDropZone" style="display:block;border:2px dashed #CBD5E1;border-radius:16px;padding:28px 16px;text-align:center;cursor:pointer;background:#fff;margin-bottom:16px;transition:all .2s"
-        ondragover="event.preventDefault();this.style.borderColor='#2C4A6E';this.style.background='#EFF6FF'"
-        ondragleave="this.style.borderColor='#CBD5E1';this.style.background='#fff'"
-        ondrop="event.preventDefault();this.style.borderColor='#CBD5E1';this.style.background='#fff';handleWorkFileDrop(event)">
-        <svg width="36" height="36" fill="none" stroke="#94A3B8" viewBox="0 0 24 24" style="margin:0 auto 8px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        <div id="workDropText" style="font-size:14px;font-weight:700;color:#475569;margin-bottom:4px">파일을 드래그하거나 클릭하여 선택</div>
-        <div id="workDropSub" style="font-size:12px;color:#94A3B8">CSV / Excel (.xlsx) 지원</div>
-        <input type="file" id="workFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleWorkFile(this)">
-      </label>
-
-      <!-- 선택된 파일명 -->
-      <div id="selectedFileBar" style="display:none;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:8px">
-        <svg width="15" height="15" fill="none" stroke="#2563EB" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        <span id="selectedFileName" style="font-size:13px;font-weight:800;color:#1D4ED8"></span>
-      </div>
-
-      <!-- 파싱 오류 메시지 -->
-      <div id="workParseError" style="display:none;background:#FFF1F2;border:1.5px solid #FECACA;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#BE123C;font-weight:700"></div>
-
-      <!-- 업로드 미리보기 -->
-      <div id="workUploadPreview" style="display:none">
-        <div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
-          <svg width="16" height="16" fill="none" stroke="#2563EB" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span id="workUploadFileName" style="font-size:13px;font-weight:800;color:#1D4ED8;flex:1"></span>
-          <span id="workUploadCount" style="font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px;background:#DBEAFE;color:#1D4ED8"></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <span style="width:4px;height:18px;background:#F97316;border-radius:3px;display:inline-block"></span>
-          <span style="font-size:14px;font-weight:800;color:#9A3412">업로드 미리보기</span>
-        </div>
-        <div id="workUploadSummary" style="margin-bottom:10px"></div>
-        <div id="workUploadTable" style="border-radius:12px;overflow:hidden;border:1.5px solid #E2E8F0;margin-bottom:14px;max-height:260px;overflow-y:auto"></div>
-        <div style="display:flex;gap:8px">
-          <button onclick="applyWorkUpload(false)" style="flex:1;padding:12px;border-radius:12px;background:linear-gradient(135deg,#1E2D3D,#2C4A6E);color:#fff;font-size:13px;font-weight:800;border:none;cursor:pointer">+ 기존에 추가</button>
-          <button onclick="applyWorkUpload(true)" style="flex:1;padding:12px;border-radius:12px;background:linear-gradient(135deg,#991B1B,#DC2626);color:#fff;font-size:13px;font-weight:800;border:none;cursor:pointer">↺ 전체 교체</button>
-        </div>
-        <div style="font-size:11px;color:#94A3B8;text-align:center;margin-top:6px">전체 교체 시 기존 데이터가 삭제됩니다</div>
+        <span style="font-size:15px;font-weight:800;color:#1E2D3D">업무분장 관리</span>
       </div>
 
       <!-- 전체 초기화 -->
@@ -750,6 +764,27 @@
         <div id="workCurrentStatus" style="display:none;margin-top:12px"></div>
       </div>
     </div>
+  </div>
+
+  <!-- 직원관리 탭 -->
+  <div id="adminPanel_emp" class="hidden flex-1 overflow-y-auto px-4 py-4" style="background:var(--bg)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span style="display:inline-block;width:4px;height:20px;background:#9333EA;border-radius:3px"></span>
+      <span style="font-size:15px;font-weight:800;color:#1E2D3D">직원관리</span>
+    </div>
+
+    <div class="card p-4 mb-4">
+      <p class="text-xs font-semibold mb-2" style="color:#94A3B8">신규 직원 추가</p>
+      <div style="display:flex;gap:8px">
+        <input id="newEmpNameInput" type="text" placeholder="직원 이름" class="flex-1 px-3 py-3 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"
+          onkeydown="if(event.key==='Enter'){addEmployee(this.value);this.value='';}">
+        <button onclick="addEmployee(document.getElementById('newEmpNameInput').value);document.getElementById('newEmpNameInput').value=''"
+          class="px-5 py-3 rounded-xl text-sm font-bold text-white" style="background:#9333EA">+ 추가</button>
+      </div>
+    </div>
+
+    <p class="text-xs font-semibold mb-2" style="color:#94A3B8">전체 명단 (활성/퇴사)</p>
+    <div id="employeeManageList"></div>
   </div>
 </div>
 
@@ -803,7 +838,7 @@
     <div style="overflow-y:auto;padding:14px 16px 16px;flex:1">
       <div id="myWorkSummary" class="card p-3 mb-3 flex gap-4"></div>
       <div id="myWorkList" class="space-y-3 mb-3"></div>
-      <button id="myWorkReqBtn" onclick="openWorkReqModal()" class="w-full py-3 rounded-2xl text-sm font-bold" style="background:#EEF2FF;color:#4338CA;border:1.5px solid #C7D2FE">
+      <button id="myWorkReqBtn" onclick="openWorkReqUnified()" class="w-full py-3 rounded-2xl text-sm font-bold" style="background:#EEF2FF;color:#4338CA;border:1.5px solid #C7D2FE">
         ✏️ 업무 수정 신청
       </button>
       <p id="myWorkReqStatus" class="text-xs text-center mt-2 hidden" style="color:#94A3B8"></p>
@@ -873,7 +908,83 @@ function sbSet(key, value) {
   }).catch(e => console.warn('sbSet 실패:', e.message));
 }
 
-const EMPLOYEES = Array.from({length: 21}, (_, i) => `홍길동${i + 1}`);
+// 브라우저에 남은 옛 캐시값을 지우고 서버에서 새로 받아오기 (개발자도구 없이 클릭 한 번으로)
+function forceResyncData() {
+  localStorage.clear();
+  location.reload();
+}
+
+const _DEFAULT_ROSTER = ['강재호','김용남','김용호','김치묵','김홍','명창록','박서정','이강대','이명구','이상철','최통주','김홍일','서재원','송현권','윤정상','양수영','이행연','우병일','임종심','이창우','진중화'];
+let EMPLOYEES = [..._DEFAULT_ROSTER]; // 활성 직원만 (재계산: refreshEmployeesFromRoster)
+
+function getRoster() {
+  let roster = sbGet('employees_roster', null);
+  if (!roster) {
+    roster = _DEFAULT_ROSTER.map(name => ({ name, active: true }));
+    sbSet('employees_roster', roster);
+  }
+  return roster;
+}
+function saveRoster(roster) { sbSet('employees_roster', roster); }
+function refreshEmployeesFromRoster() {
+  EMPLOYEES = getRoster().filter(r => r.active).map(r => r.name);
+}
+
+function addEmployee(name) {
+  name = (name || '').trim();
+  if (!name) { showToast('이름을 입력하세요'); return; }
+  const roster = getRoster();
+  const existing = roster.find(r => r.name === name);
+  if (existing) {
+    if (existing.active) { showToast('이미 등록된 직원입니다'); return; }
+    existing.active = true;
+  } else {
+    roster.push({ name, active: true });
+  }
+  saveRoster(roster);
+  refreshEmployeesFromRoster();
+  renderEmployeeManageList();
+  showToast(`${name}님이 추가되었습니다`);
+}
+
+function setEmployeeActive(name, active) {
+  const roster = getRoster();
+  const r = roster.find(x => x.name === name);
+  if (!r) return;
+  r.active = active;
+  saveRoster(roster);
+  refreshEmployeesFromRoster();
+  renderEmployeeManageList();
+  showToast(active ? `${name}님을 복직 처리했습니다` : `${name}님을 퇴사(비활성) 처리했습니다`);
+}
+
+function deleteEmployeePermanently(name) {
+  if (!confirm(`${name}님을 명단에서 완전히 삭제하시겠습니까?\n과거 출퇴근/업무분장 기록은 데이터에 남지만 목록에는 더 이상 표시되지 않습니다.`)) return;
+  const roster = getRoster().filter(r => r.name !== name);
+  saveRoster(roster);
+  refreshEmployeesFromRoster();
+  renderEmployeeManageList();
+  showToast(`${name}님이 명단에서 삭제되었습니다`);
+}
+
+function renderEmployeeManageList() {
+  const el = document.getElementById('employeeManageList');
+  if (!el) return;
+  const roster = getRoster().slice().sort((a,b) => (a.active === b.active) ? a.name.localeCompare(b.name) : (a.active ? -1 : 1));
+  el.innerHTML = roster.map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1.5px solid ${r.active ? '#E2E8F0' : '#FED7AA'};background:${r.active ? '#fff' : '#FFFBEB'};border-radius:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px;font-weight:800;color:${r.active ? '#1E2D3D' : '#94A3B8'}">${r.name}</span>
+        ${r.active ? '' : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:#FED7AA;color:#9A3412">퇴사(비활성)</span>'}
+      </div>
+      <div style="display:flex;gap:6px">
+        ${r.active
+          ? `<button onclick="setEmployeeActive('${r.name}',false)" style="font-size:11px;padding:5px 10px;border-radius:8px;background:#FFF1F2;color:#BE123C;border:1px solid #FECACA;cursor:pointer;font-weight:700">퇴사 처리</button>`
+          : `<button onclick="setEmployeeActive('${r.name}',true)" style="font-size:11px;padding:5px 10px;border-radius:8px;background:#ECFDF5;color:#166534;border:1px solid #86EFAC;cursor:pointer;font-weight:700">복직</button>`}
+        <button onclick="deleteEmployeePermanently('${r.name}')" style="font-size:11px;padding:5px 10px;border-radius:8px;background:#F1F5F9;color:#64748B;border:1px solid #E2E8F0;cursor:pointer;font-weight:700">완전삭제</button>
+      </div>
+    </div>`).join('');
+}
 
 let currentEmployee = null;
 let currentDate = '';
@@ -927,7 +1038,47 @@ function showToast(msg, duration = 2000) {
 }
 
 // 메인 화면 초기화
+// {date, shift, hours}
+const _JUNE2026_SCHEDULE = {
+  "강재호":[{date:"2026-06-02",shift:"day",hours:5},{date:"2026-06-05",shift:"day",hours:7},{date:"2026-06-10",shift:"day",hours:6},{date:"2026-06-11",shift:"day",hours:6},{date:"2026-06-12",shift:"day",hours:3},{date:"2026-06-15",shift:"day",hours:6},{date:"2026-06-17",shift:"day",hours:3},{date:"2026-06-19",shift:"day",hours:6},{date:"2026-06-24",shift:"day",hours:5},{date:"2026-06-25",shift:"day",hours:5},{date:"2026-06-26",shift:"day",hours:5}],
+  "김용남":[{date:"2026-06-01",shift:"afternoon",hours:2},{date:"2026-06-04",shift:"afternoon",hours:5},{date:"2026-06-05",shift:"afternoon",hours:5},{date:"2026-06-08",shift:"afternoon",hours:5},{date:"2026-06-11",shift:"afternoon",hours:5},{date:"2026-06-12",shift:"afternoon",hours:5},{date:"2026-06-15",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-19",shift:"afternoon",hours:5},{date:"2026-06-22",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5},{date:"2026-06-26",shift:"afternoon",hours:5}],
+  "김용호":[{date:"2026-06-02",shift:"day",hours:3},{date:"2026-06-04",shift:"day",hours:4},{date:"2026-06-05",shift:"day",hours:5},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-11",shift:"day",hours:5},{date:"2026-06-12",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-18",shift:"day",hours:5},{date:"2026-06-19",shift:"day",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-25",shift:"day",hours:5},{date:"2026-06-26",shift:"day",hours:5}],
+  "김치묵":[{date:"2026-06-04",shift:"afternoon",hours:6},{date:"2026-06-05",shift:"afternoon",hours:6},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-11",shift:"afternoon",hours:5},{date:"2026-06-12",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-19",shift:"afternoon",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5},{date:"2026-06-26",shift:"afternoon",hours:5}],
+  "김홍":[{date:"2026-06-01",shift:"afternoon",hours:5},{date:"2026-06-04",shift:"afternoon",hours:5},{date:"2026-06-08",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-11",shift:"afternoon",hours:5},{date:"2026-06-15",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-22",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5},{date:"2026-06-29",shift:"afternoon",hours:2}],
+  "명창록":[{date:"2026-06-02",shift:"afternoon",hours:5},{date:"2026-06-05",shift:"afternoon",hours:7},{date:"2026-06-09",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-12",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-19",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5},{date:"2026-06-26",shift:"afternoon",hours:5}],
+  "박서정":[{date:"2026-06-01",shift:"day",hours:5},{date:"2026-06-04",shift:"day",hours:2},{date:"2026-06-05",shift:"day",hours:5},{date:"2026-06-08",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:5},{date:"2026-06-11",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:5},{date:"2026-06-19",shift:"day",hours:5},{date:"2026-06-22",shift:"day",hours:5},{date:"2026-06-25",shift:"day",hours:3},{date:"2026-06-26",shift:"day",hours:2},{date:"2026-06-29",shift:"day",hours:5}],
+  "이강대":[{date:"2026-06-01",shift:"afternoon",hours:5},{date:"2026-06-02",shift:"afternoon",hours:7},{date:"2026-06-08",shift:"afternoon",hours:5},{date:"2026-06-09",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-15",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-22",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5}],
+  "이명구":[{date:"2026-06-01",shift:"day",hours:5},{date:"2026-06-02",shift:"day",hours:5},{date:"2026-06-04",shift:"day",hours:2},{date:"2026-06-08",shift:"day",hours:5},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:5},{date:"2026-06-15",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:5},{date:"2026-06-22",shift:"day",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-24",shift:"day",hours:4},{date:"2026-06-29",shift:"day",hours:1}],
+  "이상철":[{date:"2026-06-02",shift:"day",hours:5},{date:"2026-06-04",shift:"day",hours:7},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:5},{date:"2026-06-11",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:5},{date:"2026-06-18",shift:"day",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-24",shift:"day",hours:5},{date:"2026-06-25",shift:"day",hours:5}],
+  "최통주":[{date:"2026-06-01",shift:"afternoon",hours:3},{date:"2026-06-02",shift:"afternoon",hours:5},{date:"2026-06-04",shift:"afternoon",hours:4},{date:"2026-06-08",shift:"afternoon",hours:3},{date:"2026-06-15",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-22",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5},{date:"2026-06-29",shift:"afternoon",hours:6},{date:"2026-06-30",shift:"afternoon",hours:6}],
+  "김홍일":[{date:"2026-06-01",shift:"day",hours:3},{date:"2026-06-02",shift:"day",hours:5},{date:"2026-06-05",shift:"day",hours:4},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:5},{date:"2026-06-12",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:5},{date:"2026-06-19",shift:"day",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-24",shift:"day",hours:5},{date:"2026-06-26",shift:"day",hours:5}],
+  "서재원":[{date:"2026-06-01",shift:"afternoon",hours:3},{date:"2026-06-02",shift:"afternoon",hours:5},{date:"2026-06-05",shift:"afternoon",hours:4},{date:"2026-06-08",shift:"afternoon",hours:5},{date:"2026-06-09",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-15",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-22",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5}],
+  "송현권":[{date:"2026-06-01",shift:"day",hours:3},{date:"2026-06-04",shift:"day",hours:4},{date:"2026-06-05",shift:"day",hours:5},{date:"2026-06-08",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:5},{date:"2026-06-12",shift:"day",hours:5},{date:"2026-06-15",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:5},{date:"2026-06-19",shift:"day",hours:5},{date:"2026-06-22",shift:"day",hours:5},{date:"2026-06-24",shift:"day",hours:5},{date:"2026-06-26",shift:"day",hours:5}],
+  "윤정상":[{date:"2026-06-01",shift:"afternoon",hours:3},{date:"2026-06-02",shift:"afternoon",hours:5},{date:"2026-06-05",shift:"afternoon",hours:4},{date:"2026-06-09",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-11",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5}],
+  "양수영":[{date:"2026-06-01",shift:"day",hours:3},{date:"2026-06-02",shift:"day",hours:4},{date:"2026-06-04",shift:"day",hours:5},{date:"2026-06-08",shift:"day",hours:5},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-11",shift:"day",hours:5},{date:"2026-06-15",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:3},{date:"2026-06-19",shift:"day",hours:2},{date:"2026-06-22",shift:"day",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-25",shift:"day",hours:5}],
+  "이행연":[{date:"2026-06-01",shift:"afternoon",hours:3},{date:"2026-06-02",shift:"afternoon",hours:5},{date:"2026-06-04",shift:"afternoon",hours:4},{date:"2026-06-09",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-11",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5}],
+  "우병일":[{date:"2026-06-01",shift:"day",hours:3},{date:"2026-06-04",shift:"day",hours:4},{date:"2026-06-05",shift:"day",hours:5},{date:"2026-06-08",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:5},{date:"2026-06-12",shift:"day",hours:5},{date:"2026-06-15",shift:"day",hours:5},{date:"2026-06-17",shift:"day",hours:5},{date:"2026-06-19",shift:"day",hours:5},{date:"2026-06-22",shift:"day",hours:5},{date:"2026-06-24",shift:"day",hours:5},{date:"2026-06-26",shift:"day",hours:5}],
+  "임종심":[{date:"2026-06-01",shift:"afternoon",hours:3},{date:"2026-06-02",shift:"day",hours:5},{date:"2026-06-04",shift:"afternoon",hours:4},{date:"2026-06-05",shift:"afternoon",hours:5},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-10",shift:"day",hours:3},{date:"2026-06-11",shift:"afternoon",hours:7},{date:"2026-06-12",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-19",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-24",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5},{date:"2026-06-26",shift:"afternoon",hours:5}],
+  "이창우":[{date:"2026-06-01",shift:"day",hours:3},{date:"2026-06-02",shift:"day",hours:5},{date:"2026-06-04",shift:"day",hours:4},{date:"2026-06-08",shift:"day",hours:5},{date:"2026-06-09",shift:"day",hours:5},{date:"2026-06-11",shift:"day",hours:5},{date:"2026-06-16",shift:"day",hours:5},{date:"2026-06-18",shift:"day",hours:5},{date:"2026-06-22",shift:"day",hours:5},{date:"2026-06-23",shift:"day",hours:5},{date:"2026-06-25",shift:"day",hours:5},{date:"2026-06-30",shift:"day",hours:5}],
+  "진중화":[{date:"2026-06-01",shift:"afternoon",hours:3},{date:"2026-06-02",shift:"afternoon",hours:4},{date:"2026-06-04",shift:"afternoon",hours:5},{date:"2026-06-09",shift:"afternoon",hours:5},{date:"2026-06-10",shift:"afternoon",hours:5},{date:"2026-06-11",shift:"afternoon",hours:5},{date:"2026-06-16",shift:"afternoon",hours:5},{date:"2026-06-17",shift:"afternoon",hours:5},{date:"2026-06-18",shift:"afternoon",hours:5},{date:"2026-06-23",shift:"afternoon",hours:5},{date:"2026-06-25",shift:"afternoon",hours:5},{date:"2026-06-30",shift:"afternoon",hours:5}]
+};
+
+function clearJune2026Schedule() {
+  // v7: 6월 전직원 monthplan + 6월 업무분장 + 변경신청 내역 전체 초기화
+  const ver = sbGet('june2026_ver', 0);
+  if (ver >= 7) return;
+  EMPLOYEES.forEach(emp => {
+    sbSet(monthPlanKey(emp, 2026, 6), null);
+    const remaining = getWorkAssign(emp).filter(t => !(t.date && t.date.startsWith('2026-06')));
+    saveWorkAssign(emp, remaining);
+  });
+  sbSet('change_requests', []);
+  sbSet('workassign_requests', []);
+  sbSet('june2026_ver', 7);
+}
+
 function initMain() {
+  clearJune2026Schedule();
   const today = new Date();
   const days = ['일','월','화','수','목','금','토'];
   document.getElementById('todayDate').textContent =
@@ -1045,7 +1196,7 @@ function updateWorkTimeDisplay(inTime, outTime) {
 // ── GPS 위치 인증 ──────────────────────────────────────
 const OFFICE_LAT = 37.592543;
 const OFFICE_LNG = 127.060132;
-const OFFICE_RADIUS = 200; // 미터
+const OFFICE_RADIUS = 500; // 미터
 
 function getDistanceMeters(lat1, lng1, lat2, lng2) {
   const R = 6371000;
@@ -1060,7 +1211,10 @@ function showGpsAlert(msg) {
   document.getElementById('gpsAlertModal').classList.remove('hidden');
 }
 
+const GPS_CHECK_ENABLED = true; // 위치 확인 활성화됨
+
 function verifyLocation(onSuccess) {
+  if (!GPS_CHECK_ENABLED) { onSuccess(); return; }
   if (!navigator.geolocation) {
     showGpsAlert('이 브라우저는 위치 서비스를 지원하지 않습니다.');
     return;
@@ -1199,37 +1353,96 @@ function populateAdminMonthSelect() {
   }
 }
 
+// 해당 직원/날짜의 출퇴근 상태 계산: present(정상)/late(지각)/absent(결근)/scheduled(예정)/none(해당없음)
+function getAttStatus(emp, dateStr, year, month) {
+  const rec = getRecord(emp, dateStr);
+  const plan = getMonthPlan(emp, year, month);
+  const planned = plan?.plannedDates?.includes(dateStr);
+  if (rec?.checkIn) {
+    const custom = plan?.dateCustomTimes && plan.dateCustomTimes[dateStr];
+    let inTime;
+    if (custom) {
+      inTime = custom.inTime;
+    } else {
+      const shiftKey = (plan?.dateShifts && plan.dateShifts[dateStr]) || plan?.shift || 'day';
+      inTime = SHIFT_INFO[shiftKey]?.inTime || SHIFT_INFO.day.inTime;
+    }
+    return { status: rec.checkIn > inTime ? 'late' : 'present', rec, planned };
+  }
+  if (planned && dateStr < getTodayStr()) return { status: 'absent', rec: null, planned };
+  if (planned) return { status: 'scheduled', rec: null, planned };
+  return { status: 'none', rec: null, planned };
+}
+
 function renderAdminTable() {
   const ym = document.getElementById('adminMonthSelect').value;
   const [year, month] = ym.split('-').map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
-  const allRecords = [];
 
-  EMPLOYEES.forEach(emp => {
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${ym}-${String(d).padStart(2,'0')}`;
-      const rec = getRecord(emp, dateStr);
-      if (rec) allRecords.push(rec);
-    }
-  });
-
-  allRecords.sort((a, b) => a.date.localeCompare(b.date) || a.employee.localeCompare(b.employee));
-
-  const tbody = document.getElementById('adminTableBody');
-  if (allRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400 text-sm">기록이 없습니다</td></tr>';
-    return;
+  let present = 0, late = 0, absent = 0;
+  const dayHeaders = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${ym}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(year, month - 1, d).getDay();
+    dayHeaders.push({ d, dateStr, dow });
   }
 
-  tbody.innerHTML = allRecords.map(r => `
-    <tr>
-      <td class="whitespace-nowrap" style="color:#64748B">${formatDate(r.date)}</td>
-      <td class="font-bold" style="color:#0F172A">${r.employee}</td>
-      <td style="color:#10B981;font-weight:600">${r.checkIn}</td>
-      <td style="color:#F43F5E;font-weight:600">${r.checkOut || '-'}</td>
-      <td class="font-black" style="color:var(--indigo)">${r.workTime}</td>
-    </tr>
-  `).join('');
+  const STATUS_COLOR = {
+    present:   { bg:'#16A34A', border:'#16A34A' },
+    late:      { bg:'#D97706', border:'#D97706' },
+    absent:    { bg:'#DC2626', border:'#DC2626' },
+    scheduled: { bg:'transparent', border:'#CBD5E1' },
+    none:      { bg:'transparent', border:'#F1F5F9' }
+  };
+
+  const head = document.getElementById('attMatrixHead');
+  head.innerHTML = `<tr style="background:#1E2D3D">
+    <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700;position:sticky;left:0;background:#1E2D3D;z-index:1">직원</th>
+    ${dayHeaders.map(h => `<th style="padding:5px 4px;color:${h.dow===0?'#FDA4AF':h.dow===6?'#93C5FD':'#94C5E8'};text-align:center;font-weight:700;min-width:22px">${h.d}</th>`).join('')}
+  </tr>`;
+
+  const body = document.getElementById('attMatrixBody');
+  body.innerHTML = EMPLOYEES.map((emp, ri) => {
+    const cells = dayHeaders.map(h => {
+      const { status } = getAttStatus(emp, h.dateStr, year, month);
+      if (status === 'present') present++;
+      else if (status === 'late') late++;
+      else if (status === 'absent') absent++;
+      const c = STATUS_COLOR[status];
+      const shape = status === 'present' || status === 'late' || status === 'absent'
+        ? `<span style="width:9px;height:9px;border-radius:50%;background:${c.bg};display:inline-block"></span>`
+        : `<span style="width:8px;height:8px;border-radius:1px;border:1.3px solid ${c.border};display:inline-block"></span>`;
+      return `<td onclick="showAttDetail('${emp}','${h.dateStr}')" style="padding:5px 4px;text-align:center;cursor:pointer;background:${ri%2===0?'#fff':'#FAFBFC'}">${shape}</td>`;
+    }).join('');
+    return `<tr style="border-bottom:1px solid #F1F5F9">
+      <td style="padding:6px 10px;font-weight:700;color:#0F172A;position:sticky;left:0;background:${ri%2===0?'#fff':'#FAFBFC'};white-space:nowrap">${emp}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  const totalSlots = present + late + absent;
+  document.getElementById('attRateVal').textContent = totalSlots ? `${Math.round((present+late)/totalSlots*100)}%` : '0%';
+  document.getElementById('attPresentVal').textContent = present;
+  document.getElementById('attLateVal').textContent = late;
+  document.getElementById('attAbsentVal').textContent = absent;
+  document.getElementById('attDetailBox').classList.add('hidden');
+}
+
+function showAttDetail(emp, dateStr) {
+  const [year, month] = dateStr.split('-').map(Number);
+  const { status, rec, planned } = getAttStatus(emp, dateStr, year, month);
+  const box = document.getElementById('attDetailBox');
+  const STATUS_LABEL = { present:'정상출근', late:'지각', absent:'결근', scheduled:'근무 예정', none:'근무계획 없음' };
+  const STATUS_COLOR2 = { present:'#16A34A', late:'#D97706', absent:'#DC2626', scheduled:'#64748B', none:'#94A3B8' };
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:between;justify-content:space-between;margin-bottom:8px">
+      <p class="text-sm font-bold" style="color:#0F172A">${emp} · ${dateStr}</p>
+      <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${STATUS_COLOR2[status]}1A;color:${STATUS_COLOR2[status]}">${STATUS_LABEL[status]}</span>
+    </div>
+    ${rec ? `<p class="text-xs" style="color:#475569">출근 <b style="color:#10B981">${rec.checkIn}</b> &nbsp;→&nbsp; 퇴근 <b style="color:#F43F5E">${rec.checkOut || '-'}</b> &nbsp;|&nbsp; 근무시간 <b style="color:var(--indigo)">${rec.workTime || '-'}</b></p>`
+      : `<p class="text-xs" style="color:#94A3B8">출퇴근 기록이 없습니다${planned ? ' (근무 예정일이었음)' : ''}</p>`}
+  `;
+  box.classList.remove('hidden');
 }
 
 function exportCSV() {
@@ -1259,8 +1472,9 @@ function exportCSV() {
 // ── 월간계획 ────────────────────────────────────────
 const SHIFT_INFO = {
   day:       { label: '오전조', inTime: '09:00', outTime: '14:30' },
-  afternoon: { label: '오후조', inTime: '11:30', outTime: '17:00' }
+  afternoon: { label: '오후조', inTime: '11:00', outTime: '16:30' }
 };
+const MONTHLY_HOURS_TARGET = 60;
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
 const DAY_COLORS = {
   0: 'border-red-400 bg-red-50 text-red-500',
@@ -1274,6 +1488,7 @@ let mpYear = 0;
 let mpMonth = 0;         // 1-indexed
 let mpShift = 'day';
 let mpSelectedDays = new Set();  // 0=일 ~ 6=토
+let mpExcludedDates = new Set(); // 미리보기에서 개별로 제외한 날짜 (YYYY-MM-DD)
 
 function monthPlanKey(emp, year, month) {
   return `monthplan_${emp}_${year}-${String(month).padStart(2,'0')}`;
@@ -1295,7 +1510,22 @@ function getDefaultTargetMonth() {
   return { year: t.getFullYear(), month: t.getMonth() + 1 };
 }
 
+// 입력 가능 기간: 매달 22일 ~ 말일 (다음달 계획 입력)
+const PLAN_WINDOW_CHECK_ENABLED = false; // 테스트 중 입력기간 제한 비활성화
+function isPlanInputWindowOpen() {
+  if (!PLAN_WINDOW_CHECK_ENABLED) return true;
+  return new Date().getDate() >= 22;
+}
+
+function planLockKey(year, month) { return `plan_lock_${year}-${String(month).padStart(2,'0')}`; }
+function isMonthLocked(year, month) { return !!sbGet(planLockKey(year, month), false); }
+function setMonthLocked(year, month, locked) { sbSet(planLockKey(year, month), locked); }
+
 function openMonthPlanSelect() {
+  if (!isPlanInputWindowOpen()) {
+    showToast('월간계획 입력은 매달 22일부터 말일까지 가능합니다', 3000);
+    return;
+  }
   const grid = document.getElementById('monthPlanNameGrid');
   grid.innerHTML = '';
   EMPLOYEES.forEach(name => {
@@ -1316,15 +1546,29 @@ function closeMonthPlanSelect() {
   document.getElementById('monthPlanSelectModal').classList.add('hidden');
 }
 
+// 해당 직원/연/월에 맞는 계획+업무분장 데이터를 mpShift/mpSelectedDays/mpTaskData에 로드
+function loadMonthPlanData(name, year, month) {
+  const existing = getMonthPlan(name, year, month);
+  mpShift = existing?.shift || 'day';
+  mpSelectedDays = new Set(existing?.workDays || []);
+  mpExcludedDates = new Set(existing?.excludedDates || []);
+
+  // 해당 월에 속한 업무분장 내용만 불러오기
+  mpTaskData = {};
+  const monthPrefix = `${year}-${String(month).padStart(2,'0')}`;
+  getWorkAssign(name).forEach(t => {
+    if (!t.date || !t.date.startsWith(monthPrefix)) return;
+    const entry = mpEnsure(t.date);
+    entry.items.push({ task: t.task || '', hours: t.hours || '', note: t.note || '' });
+  });
+}
+
 function startMonthPlan(name) {
   mpEmployee = name;
   const { year, month } = getDefaultTargetMonth();
   mpYear = year; mpMonth = month;
 
-  // 기존 계획 불러오기
-  const existing = getMonthPlan(name, year, month);
-  mpShift = existing?.shift || 'day';
-  mpSelectedDays = new Set(existing?.workDays || []);
+  loadMonthPlanData(name, year, month);
 
   document.getElementById('monthPlanTitle').textContent = `${name}님 월간계획`;
   document.getElementById('monthPlanScreen').classList.remove('hidden');
@@ -1363,16 +1607,55 @@ function refreshMonthPlanUI() {
 
   updatePlanPreview();
 
+  // 마감 여부 반영
+  const locked = isMonthLocked(mpYear, mpMonth);
+  document.getElementById('planLockBanner').classList.toggle('hidden', !locked);
+  const submitBtn = document.getElementById('planSubmitBtn');
+  submitBtn.disabled = locked;
+  submitBtn.style.opacity = locked ? '0.45' : '1';
+  submitBtn.style.cursor = locked ? 'not-allowed' : 'pointer';
+  document.getElementById('planSubmitHint').textContent = locked
+    ? '마감된 달입니다. 수정이 필요하면 날짜별 수정 요청을 이용해주세요.'
+    : '제출 후에도 수정 가능합니다 (마감 전까지)';
+
   // 기존 계획 있으면 날짜별 수정 요청 섹션 표시
   const existingPlan = getMonthPlan(mpEmployee, mpYear, mpMonth);
   if (existingPlan) renderDateChangeSection();
   else document.getElementById('dateChangeSection').classList.add('hidden');
+
+  renderFinalScheduleCard(existingPlan);
+}
+
+// 변경신청 승인분까지 반영된 실제 저장 데이터를 그대로 보여줌 (편집 중인 값과 별개)
+function renderFinalScheduleCard(plan) {
+  const card = document.getElementById('finalScheduleCard');
+  if (!plan || !plan.plannedDates || plan.plannedDates.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+  const dates = [...plan.plannedDates].sort();
+  document.getElementById('finalScheduleCount').textContent = `${dates.length}일`;
+  document.getElementById('finalScheduleDates').innerHTML = dates.map(dateStr => {
+    const dt = new Date(dateStr);
+    const dow = dt.getDay();
+    const shiftKey = (plan.dateShifts && plan.dateShifts[dateStr]) || plan.shift || 'day';
+    const isMorning = shiftKey === 'day';
+    const hours = plan.dateHours && plan.dateHours[dateStr];
+    const bg = isMorning ? '#DCFCE7' : '#FFEDD5';
+    const fc = isMorning ? '#166534' : '#C2410C';
+    const tag = isMorning ? '오전' : '오후';
+    return `<span class="text-xs px-2 py-1 rounded-lg font-semibold" style="background:${bg};color:${fc}">
+      ${dateStr.slice(5)} (${DAY_NAMES[dow]}) ${tag}${hours ? ' ' + hours + 'h' : ''}
+    </span>`;
+  }).join('');
 }
 
 function changeMonthPlanMonth(delta) {
   const d = new Date(mpYear, mpMonth - 1 + delta, 1);
   mpYear = d.getFullYear();
   mpMonth = d.getMonth() + 1;
+  loadMonthPlanData(mpEmployee, mpYear, mpMonth);
   refreshMonthPlanUI();
 }
 
@@ -1390,16 +1673,62 @@ function setWeekdays() { mpSelectedDays = new Set([1,2,3,4,5]); refreshMonthPlan
 function setAllDays()  { mpSelectedDays = new Set([0,1,2,3,4,5,6]); refreshMonthPlanUI(); }
 function clearDays()   { mpSelectedDays = new Set(); refreshMonthPlanUI(); }
 
+// 2026년 대한민국 공휴일 (관공서 휴일 기준, 대체공휴일 포함)
+const KR_HOLIDAYS_2026 = {
+  '2026-01-01': '신정',
+  '2026-02-16': '설날 연휴',
+  '2026-02-17': '설날',
+  '2026-02-18': '설날 연휴',
+  '2026-03-01': '삼일절',
+  '2026-03-02': '대체공휴일(삼일절)',
+  '2026-05-05': '어린이날',
+  '2026-05-24': '부처님오신날',
+  '2026-05-25': '대체공휴일(부처님오신날)',
+  '2026-06-06': '현충일',
+  '2026-07-17': '제헌절',
+  '2026-08-15': '광복절',
+  '2026-08-17': '대체공휴일(광복절)',
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+  '2026-10-03': '개천절',
+  '2026-10-05': '대체공휴일(개천절)',
+  '2026-10-09': '한글날',
+  '2026-12-25': '성탄절'
+};
+function isKrHoliday(dateStr) { return !!KR_HOLIDAYS_2026[dateStr]; }
+
 function getPlannedDates() {
   const dates = [];
   const daysInMonth = new Date(mpYear, mpMonth, 0).getDate();
   for (let d = 1; d <= daysInMonth; d++) {
     const dt = new Date(mpYear, mpMonth - 1, d);
     if (mpSelectedDays.has(dt.getDay())) {
-      dates.push(`${mpYear}-${String(mpMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+      const dateStr = `${mpYear}-${String(mpMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if (!isKrHoliday(dateStr) && !mpExcludedDates.has(dateStr)) dates.push(dateStr);
     }
   }
   return dates;
+}
+
+function toggleExcludeDate(dateStr) {
+  if (mpExcludedDates.has(dateStr)) mpExcludedDates.delete(dateStr);
+  else mpExcludedDates.add(dateStr);
+  updatePlanPreview();
+}
+
+// 선택 요일 중 이번 달에 해당하는 공휴일 목록 (미리보기 안내용)
+function getExcludedHolidaysThisMonth() {
+  const daysInMonth = new Date(mpYear, mpMonth, 0).getDate();
+  const result = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(mpYear, mpMonth - 1, d);
+    if (mpSelectedDays.has(dt.getDay())) {
+      const dateStr = `${mpYear}-${String(mpMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if (isKrHoliday(dateStr)) result.push({ date: dateStr, name: KR_HOLIDAYS_2026[dateStr] });
+    }
+  }
+  return result;
 }
 
 function updatePlanPreview() {
@@ -1408,17 +1737,138 @@ function updatePlanPreview() {
   document.getElementById('planDayCount').textContent = `${dates.length}일`;
   if (dates.length === 0) {
     container.innerHTML = '<p class="text-sm text-gray-400">요일을 선택하면 근무 예정일이 표시됩니다</p>';
+  } else {
+    container.innerHTML = dates.map(dateStr => {
+      const dt = new Date(dateStr);
+      const dow = dt.getDay();
+      const color = dow === 0 ? 'bg-red-50 text-red-500' : dow === 6 ? 'bg-blue-50 text-blue-500' : 'bg-gray-100 text-gray-600';
+      return `<span class="text-xs px-2 py-1 rounded-lg font-medium ${color}" style="display:inline-flex;align-items:center;gap:4px">
+        ${dateStr.slice(5)} (${DAY_NAMES[dow]})
+        <button type="button" onclick="toggleExcludeDate('${dateStr}')" title="이 날짜 제외" style="background:none;border:none;cursor:pointer;font-weight:900;opacity:.6;padding:0;line-height:1">✕</button>
+      </span>`;
+    }).join('');
+  }
+  renderMpTaskList(dates);
+
+  const holidayNote = document.getElementById('planHolidayNote');
+  const excludedHolidays = getExcludedHolidaysThisMonth();
+  const manualExcluded = [...mpExcludedDates].filter(d => d.startsWith(`${mpYear}-${String(mpMonth).padStart(2,'0')}`)).sort();
+  const noteParts = [];
+  if (excludedHolidays.length > 0) noteParts.push('🎌 공휴일이라 제외됨: ' + excludedHolidays.map(h => `${h.date.slice(5)}(${h.name})`).join(', '));
+  if (manualExcluded.length > 0) {
+    noteParts.push('🗑 직접 제외한 날짜: ' + manualExcluded.map(d =>
+      `${d.slice(5)}<button type="button" onclick="toggleExcludeDate('${d}')" style="margin-left:3px;color:#4338CA;font-weight:700;background:none;border:none;cursor:pointer;text-decoration:underline">복원</button>`
+    ).join(', '));
+  }
+  if (noteParts.length > 0) {
+    holidayNote.classList.remove('hidden');
+    holidayNote.innerHTML = noteParts.join('<br>');
+  } else {
+    holidayNote.classList.add('hidden');
+  }
+}
+
+const MP_TASK_OPTIONS = ['강의','안내','상담','커뮤니티','기타'];
+let mpTaskData = {}; // { date: { items:[{task,hours,note}], draftTask, draftHours } }
+
+function mpEnsure(date) {
+  if (!mpTaskData[date]) mpTaskData[date] = { items: [], draftTask: '', draftHours: '' };
+  return mpTaskData[date];
+}
+
+function renderMpTaskList(dates) {
+  const el = document.getElementById('mpTaskList');
+  if (!el) return;
+  // 선택 해제된 날짜의 데이터는 정리
+  Object.keys(mpTaskData).forEach(d => { if (!dates.includes(d)) delete mpTaskData[d]; });
+
+  if (dates.length === 0) {
+    el.innerHTML = '<p class="text-xs text-gray-400">근무 예정일을 먼저 선택하세요</p>';
     return;
   }
-  container.innerHTML = dates.map(dateStr => {
+  el.innerHTML = dates.map(dateStr => {
+    const t = mpEnsure(dateStr);
     const dt = new Date(dateStr);
     const dow = dt.getDay();
-    const color = dow === 0 ? 'bg-red-50 text-red-500' : dow === 6 ? 'bg-blue-50 text-blue-500' : 'bg-gray-100 text-gray-600';
-    return `<span class="text-xs px-2 py-1 rounded-lg font-medium ${color}">${dateStr.slice(5)} (${DAY_NAMES[dow]})</span>`;
+    const dayTotal = t.items.reduce((s, it) => s + (parseFloat(it.hours) || 0), 0);
+    const chips = t.items.map((it, i) => `
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;background:#EEF2FF;color:#4338CA;font-size:11px;font-weight:700">
+        ${it.task} ${it.hours || 0}h
+        <button type="button" onclick="removeMpItem('${dateStr}',${i})" style="background:none;border:none;cursor:pointer;color:#4338CA;font-weight:900;padding:0;line-height:1">✕</button>
+      </span>`).join('');
+    return `<div style="border:1.5px solid #E2E8F0;border-radius:12px;padding:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <p class="text-xs font-bold" style="color:#475569">${dateStr.slice(5)} (${DAY_NAMES[dow]})</p>
+        <span style="font-size:11px;font-weight:800;color:#166534">${dayTotal}h</span>
+      </div>
+      ${chips ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${chips}</div>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">
+        ${MP_TASK_OPTIONS.map(opt => `<button type="button" onclick="setMpDraftTask('${dateStr}','${opt}')"
+          style="padding:5px 11px;border-radius:14px;border:1.5px solid ${t.draftTask===opt?'#4338CA':'#E2E8F0'};background:${t.draftTask===opt?'#EEF2FF':'#F8FAFC'};color:${t.draftTask===opt?'#4338CA':'#64748B'};font-size:11px;font-weight:700;cursor:pointer">${opt}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px">
+        <input type="number" min="0" step="0.5" placeholder="시간" value="${t.draftHours}" onchange="setMpDraftHours('${dateStr}',this.value)"
+          style="width:64px;padding:6px 8px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:12px">
+        <button type="button" onclick="addMpItem('${dateStr}')" style="padding:6px 14px;border-radius:8px;background:#4338CA;color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">+ 추가</button>
+      </div>
+    </div>`;
   }).join('');
+  updateMpTaskHoursTotal();
+}
+
+function updateMpTaskHoursTotal() {
+  const el = document.getElementById('mpTaskHoursTotal');
+  if (!el) return;
+  const total = Object.values(mpTaskData).reduce((sum, t) =>
+    sum + t.items.reduce((s, it) => s + (parseFloat(it.hours) || 0), 0), 0);
+  el.textContent = `총 ${total}h`;
+
+  // 월 목표시간(60h) 대비 진행률 표시 — 참고용, 제출 차단 없음
+  const pct = Math.round(total / MONTHLY_HOURS_TARGET * 100);
+  const over = total > MONTHLY_HOURS_TARGET;
+  const barColor = over ? '#F59E0B' : pct >= 100 ? '#16A34A' : '#6366F1';
+  document.getElementById('mpHoursTargetLabel').textContent = `월 목표 ${MONTHLY_HOURS_TARGET}시간 중 ${total}시간`;
+  document.getElementById('mpHoursTargetPct').textContent = `${pct}%`;
+  document.getElementById('mpHoursTargetPct').style.color = over ? '#D97706' : '#64748B';
+  document.getElementById('mpHoursTargetBar').style.width = `${Math.min(pct, 100)}%`;
+  document.getElementById('mpHoursTargetBar').style.background = barColor;
+}
+
+function setMpDraftTask(date, task) {
+  const t = mpEnsure(date);
+  t.draftTask = t.draftTask === task ? '' : task;
+  renderMpTaskList(getPlannedDates());
+}
+function setMpDraftHours(date, val) {
+  mpEnsure(date).draftHours = val;
+}
+function addMpItem(date) {
+  const t = mpEnsure(date);
+  if (!t.draftTask) { showToast('업무를 선택하세요'); return; }
+  if (!t.draftHours || parseFloat(t.draftHours) <= 0) { showToast('시간을 입력하세요'); return; }
+  t.items.push({ task: t.draftTask, hours: t.draftHours, note: '' });
+  t.draftTask = ''; t.draftHours = '';
+  renderMpTaskList(getPlannedDates());
+}
+function removeMpItem(date, idx) {
+  mpEnsure(date).items.splice(idx, 1);
+  renderMpTaskList(getPlannedDates());
+}
+function applyMpTaskToAll() {
+  const dates = getPlannedDates();
+  if (dates.length === 0) return;
+  const first = mpTaskData[dates[0]];
+  if (!first || first.items.length === 0) { showToast('첫 날짜에 업무를 먼저 추가하세요'); return; }
+  dates.forEach(d => { mpTaskData[d] = { items: first.items.map(it => ({...it})), draftTask: '', draftHours: '' }; });
+  renderMpTaskList(dates);
+  showToast('전체 날짜에 동일하게 적용했습니다');
 }
 
 function submitMonthPlan() {
+  if (isMonthLocked(mpYear, mpMonth)) {
+    showToast(`${mpYear}년 ${mpMonth}월 계획은 마감되었습니다. 변경이 필요하면 "날짜별 수정 요청"을 이용해주세요.`, 3500);
+    return;
+  }
   if (mpSelectedDays.size === 0) { showToast('근무 요일을 하나 이상 선택해주세요'); return; }
   const shift = SHIFT_INFO[mpShift];
   const data = {
@@ -1430,11 +1880,24 @@ function submitMonthPlan() {
     outTime: shift.outTime,
     workDays: [...mpSelectedDays].sort(),
     plannedDates: getPlannedDates(),
+    excludedDates: [...mpExcludedDates],
     submittedAt: new Date().toISOString()
   };
   saveMonthPlan(mpEmployee, mpYear, mpMonth, data);
+
+  // 업무분장 입력 내용 저장 (기존 같은 날짜 항목은 교체)
+  const taskDates = Object.entries(mpTaskData).filter(([d, t]) => t.items.length > 0 && data.plannedDates.includes(d));
+  if (taskDates.length > 0) {
+    const existingTasks = getWorkAssign(mpEmployee).filter(t => !taskDates.some(([d]) => d === t.date));
+    const newTasks = taskDates.flatMap(([d, t]) => t.items.map(it => ({
+      id: Date.now() + Math.random(), task: it.task, date: d, hours: it.hours || '', note: it.note || ''
+    })));
+    saveWorkAssign(mpEmployee, [...existingTasks, ...newTasks]);
+  }
+
   showToast(`${mpYear}년 ${mpMonth}월 계획이 제출되었습니다!`);
   renderDateChangeSection();
+  renderFinalScheduleCard(getMonthPlan(mpEmployee, mpYear, mpMonth));
   initMain();
 }
 
@@ -1490,8 +1953,12 @@ function renderCalendarHTML(y, m) {
       const plan = getMonthPlan(emp, y, m);
       const hasPlan = plan?.plannedDates?.includes(dateStr);
       const hasWork = getWorkAssign(emp).some(t => t.date === dateStr);
-      if (hasPlan) workers.push({ emp, type: 'plan', shift: plan.shift || 'day' });
-      else if (hasWork) workers.push({ emp, type: 'work', shift: 'day' });
+      if (hasPlan) {
+        const custom = plan.dateCustomTimes && plan.dateCustomTimes[dateStr];
+        const shift = custom ? (custom.inTime < '12:00' ? 'day' : 'afternoon') : ((plan.dateShifts && plan.dateShifts[dateStr]) || plan.shift || 'day');
+        const hours = plan.dateHours && plan.dateHours[dateStr];
+        workers.push({ emp, type: 'plan', shift, hours, customTime: custom ? `${custom.inTime}~${custom.outTime}` : null });
+      } else if (hasWork) workers.push({ emp, type: 'work', shift: 'day' });
     });
 
     const empButtons = workers.map(w => {
@@ -1500,11 +1967,12 @@ function renderCalendarHTML(y, m) {
       const fc  = isMorning ? '#166534' : '#C2410C';
       const dot = isMorning ? '#22C55E' : '#F97316';
       const tag = isMorning ? '오전' : '오후';
+      const hoursTag = w.hours ? `<span style="font-size:9px;font-weight:700;color:${fc};opacity:0.85;flex-shrink:0">${w.hours}h</span>` : '';
       return `<button onclick="openMyWorkModal('${w.emp}','${dateStr}')"
         style="display:flex;align-items:center;gap:3px;width:100%;padding:2px 5px;border-radius:5px;background:${bg};border:none;cursor:pointer;margin-bottom:2px;overflow:hidden">
         <span style="width:5px;height:5px;border-radius:50%;background:${dot};flex-shrink:0"></span>
         <span style="font-size:11px;font-weight:700;color:${fc};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:left">${w.emp}</span>
-        <span style="font-size:9px;font-weight:600;color:${fc};opacity:0.75;flex-shrink:0">${tag}</span>
+        ${hoursTag}
       </button>`;
     }).join('');
 
@@ -1610,54 +2078,84 @@ function saveChangeReqs(arr) {
 }
 
 let dcTargetDate = '';
-let dcChangeType = '';
 let dcNewShift = '';
+let dcDraftTask = '';
+let dcTaskItems = [];
 
 function openDateChangeModal(date, currentShiftLabel) {
   dcTargetDate = date;
-  dcChangeType = '';
   dcNewShift = '';
+  dcDraftTask = '';
+  dcTaskItems = [];
   document.getElementById('dcModalDate').textContent =
     `${formatDate(date)} · 현재: ${currentShiftLabel}`;
   document.getElementById('dcNote').value = '';
-  document.getElementById('dcShiftSelect').classList.add('hidden');
-  ['cancel','shift'].forEach(t =>
-    document.getElementById(`dcType_${t}`).className =
-      'w-full py-4 rounded-2xl border-2 border-gray-200 text-gray-600 text-base font-semibold text-left px-4'
-  );
-  ['morning','afternoon'].forEach(s =>
-    document.getElementById(`dcShift_${s}`).className =
-      'py-4 rounded-2xl border-2 border-gray-200 text-gray-500 font-bold'
-  );
+  document.getElementById('dcNewDate').value = date;
+  document.getElementById('dcDraftHours').value = '';
+  ['morning','afternoon'].forEach(s => {
+    document.getElementById(`dcRsShift_${s}`).className =
+      'py-4 rounded-2xl border-2 border-gray-200 text-gray-500 font-bold';
+  });
+  renderDcTaskBtns();
+  renderDcTaskChips();
   document.getElementById('dateChangeModal').classList.remove('hidden');
 }
 function closeDateChangeModal() {
   document.getElementById('dateChangeModal').classList.add('hidden');
 }
-function selectChangeType(type) {
-  dcChangeType = type;
-  ['cancel','shift'].forEach(t => {
-    const el = document.getElementById(`dcType_${t}`);
-    el.className = t === type
-      ? 'w-full py-4 rounded-2xl border-2 border-orange-400 bg-orange-50 text-orange-700 text-base font-semibold text-left px-4'
-      : 'w-full py-4 rounded-2xl border-2 border-gray-200 text-gray-600 text-base font-semibold text-left px-4';
-  });
-  document.getElementById('dcShiftSelect').classList.toggle('hidden', type !== 'shift');
-}
 function selectNewShift(shiftLabel) {
   dcNewShift = shiftLabel;
-  document.getElementById('dcShift_morning').className =
-    shiftLabel === '오전조'
-      ? 'py-4 rounded-2xl border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold'
+  ['morning','afternoon'].forEach(s => {
+    const el = document.getElementById(`dcRsShift_${s}`);
+    if (!el) return;
+    const match = (s === 'morning' && shiftLabel === '오전조') || (s === 'afternoon' && shiftLabel === '오후조');
+    el.className = match
+      ? (s === 'morning'
+          ? 'py-4 rounded-2xl border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold'
+          : 'py-4 rounded-2xl border-2 border-orange-400 bg-orange-50 text-orange-700 font-bold')
       : 'py-4 rounded-2xl border-2 border-gray-200 text-gray-500 font-bold';
-  document.getElementById('dcShift_afternoon').className =
-    shiftLabel === '오후조'
-      ? 'py-4 rounded-2xl border-2 border-orange-400 bg-orange-50 text-orange-700 font-bold'
-      : 'py-4 rounded-2xl border-2 border-gray-200 text-gray-500 font-bold';
+  });
+}
+function setDcDraftTask(task) {
+  dcDraftTask = dcDraftTask === task ? '' : task;
+  renderDcTaskBtns();
+}
+function renderDcTaskBtns() {
+  document.querySelectorAll('.dc-task-btn').forEach(btn => {
+    const active = btn.dataset.task === dcDraftTask;
+    btn.style.border = active ? '1.5px solid #4338CA' : '1.5px solid #E2E8F0';
+    btn.style.background = active ? '#EEF2FF' : '#F8FAFC';
+    btn.style.color = active ? '#4338CA' : '#64748B';
+  });
+}
+function addDcTaskItem() {
+  const hours = document.getElementById('dcDraftHours').value;
+  if (!dcDraftTask) { showToast('업무를 선택하세요'); return; }
+  if (!hours || parseFloat(hours) <= 0) { showToast('시간을 입력하세요'); return; }
+  dcTaskItems.push({ task: dcDraftTask, hours });
+  dcDraftTask = '';
+  document.getElementById('dcDraftHours').value = '';
+  renderDcTaskBtns();
+  renderDcTaskChips();
+}
+function removeDcTaskItem(idx) {
+  dcTaskItems.splice(idx, 1);
+  renderDcTaskChips();
+}
+function renderDcTaskChips() {
+  const el = document.getElementById('dcTaskChips');
+  el.innerHTML = dcTaskItems.map((it, i) => `
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:14px;background:#EEF2FF;color:#4338CA;font-size:12px;font-weight:700">
+      ${it.task} ${it.hours}h
+      <button type="button" onclick="removeDcTaskItem(${i})" style="background:none;border:none;cursor:pointer;color:#4338CA;font-weight:900;padding:0;line-height:1">✕</button>
+    </span>`).join('');
+  const total = dcTaskItems.reduce((s, it) => s + (parseFloat(it.hours) || 0), 0);
+  document.getElementById('dcTaskHoursTotal').textContent = `총 ${total}h`;
 }
 function submitDateChangeRequest() {
-  if (!dcChangeType) { showToast('수정 유형을 선택해주세요'); return; }
-  if (dcChangeType === 'shift' && !dcNewShift) { showToast('변경할 조를 선택해주세요'); return; }
+  const newDate = document.getElementById('dcNewDate').value;
+  if (!newDate) { showToast('변경할 날짜를 선택해주세요'); return; }
+  if (!dcNewShift) { showToast('근무 조를 선택해주세요'); return; }
 
   const reqs = getChangeReqs();
   // 같은 날짜 기존 대기 요청 있으면 제거 후 재신청
@@ -1667,8 +2165,10 @@ function submitDateChangeRequest() {
     id: `req_${Date.now()}`,
     emp: mpEmployee,
     date: dcTargetDate,
-    type: dcChangeType,
+    type: 'reschedule',
     newShift: dcNewShift || null,
+    newDate: newDate,
+    taskItems: dcTaskItems.slice(),
     note: document.getElementById('dcNote').value.trim(),
     requestedAt: new Date().toISOString(),
     status: 'pending'
@@ -1697,7 +2197,11 @@ function renderDateChangeSection() {
   }
 
   list.innerHTML = dates.map(ds => {
-    const req = reqs.find(r => r.emp === mpEmployee && r.date === ds);
+    // 같은 날짜에 여러 번 신청했으면 가장 최근 것을 기준으로 표시
+    const req = reqs
+      .filter(r => r.emp === mpEmployee && r.date === ds)
+      .sort((a, b) => (a.requestedAt || '').localeCompare(b.requestedAt || ''))
+      .pop();
     const dow = new Date(ds).getDay();
     const dayNames = ['일','월','화','수','목','금','토'];
     const label = `${ds.slice(5)} (${dayNames[dow]})`;
@@ -1724,7 +2228,14 @@ function renderChangeRequests() {
   // 업무 수정 신청
   const workReqs = getWorkReqs().map(r => ({...r, _kind:'work', requestedAt: r.createdAt}));
 
-  const all = [...shiftReqs, ...workReqs].sort((a, b) => {
+  // 같은 직원+날짜에 여러 번 신청했으면 가장 최근 것만 표시
+  const latestMap = new Map();
+  [...shiftReqs, ...workReqs].forEach(r => {
+    const key = `${r._kind}_${r.emp}_${r.date}`;
+    const prev = latestMap.get(key);
+    if (!prev || (r.requestedAt || '') > (prev.requestedAt || '')) latestMap.set(key, r);
+  });
+  const all = [...latestMap.values()].sort((a, b) => {
     const da = a.date || a.requestedAt || '';
     const db = b.date || b.requestedAt || '';
     return da.localeCompare(db);
@@ -1757,7 +2268,10 @@ function renderChangeRequests() {
       // 근무 변경 신청 카드
       const dow = new Date(r.date).getDay();
       const dateLabel = `${r.date} (${dayNames[dow]})`;
-      const typeLabel = r.type === 'cancel' ? '근무 취소' : `조 변경 → ${r.newShift}`;
+      const rsTasks = (r.taskItems || []).map(it => `${it.task} ${it.hours}h`).join(', ');
+      const typeLabel = r.type === 'cancel' ? '근무 취소'
+        : r.type === 'reschedule' ? `날짜/조 변경 → ${r.newDate} (${r.newShift || ''})${rsTasks ? ' · ' + rsTasks : ''}`
+        : `조 변경 → ${r.newShift}`;
       let buttons = '';
       if (r.status === 'pending') {
         buttons = `<div style="display:flex;gap:8px;margin-top:10px">
@@ -1812,20 +2326,56 @@ function approveReq(id) {
     const req = reqs.find(r => r.id === id);
     if (!req) { showToast('신청 내역을 찾을 수 없습니다'); return; }
 
-    // 실제 계획에 반영
+    // 실제 계획에 반영 (plannedDates / dateShifts / dateHours 직접 수정)
     if (req.date) {
       const [y, m] = req.date.slice(0,7).split('-').map(Number);
       const plan = getMonthPlan(req.emp, y, m);
       if (plan) {
-        if (!plan.dateOverrides) plan.dateOverrides = {};
+        plan.plannedDates = plan.plannedDates || [];
+        plan.dateShifts = plan.dateShifts || {};
+        plan.dateHours = plan.dateHours || {};
+
         if (req.type === 'cancel') {
-          plan.dateOverrides[req.date] = { type: 'cancel' };
-        } else {
+          plan.plannedDates = plan.plannedDates.filter(d => d !== req.date);
+          delete plan.dateShifts[req.date];
+          delete plan.dateHours[req.date];
+          saveMonthPlan(req.emp, y, m, plan);
+        } else if (req.type === 'shift') {
           const shiftKey = req.newShift === '오전조' ? 'day' : 'afternoon';
-          const shift = SHIFT_INFO[shiftKey];
-          plan.dateOverrides[req.date] = { type: 'shift', shiftLabel: req.newShift, inTime: shift.inTime, outTime: shift.outTime };
+          plan.dateShifts[req.date] = shiftKey;
+          if (!plan.plannedDates.includes(req.date)) plan.plannedDates.push(req.date);
+          saveMonthPlan(req.emp, y, m, plan);
+        } else if (req.type === 'reschedule') {
+          // 기존 날짜 제거
+          plan.plannedDates = plan.plannedDates.filter(d => d !== req.date);
+          delete plan.dateShifts[req.date];
+          delete plan.dateHours[req.date];
+
+          // 새 날짜가 다른 달이면 그 달의 plan을 가져와 반영
+          const [ny, nm] = req.newDate.slice(0,7).split('-').map(Number);
+          const targetPlan = (ny === y && nm === m) ? plan : (getMonthPlan(req.emp, ny, nm) || { plannedDates: [], dateShifts: {}, dateHours: {}, shift: plan.shift, shiftLabel: plan.shiftLabel, workDays: plan.workDays, submittedAt: plan.submittedAt });
+          targetPlan.plannedDates = targetPlan.plannedDates || [];
+          targetPlan.dateShifts = targetPlan.dateShifts || {};
+          targetPlan.dateHours = targetPlan.dateHours || {};
+          if (!targetPlan.plannedDates.includes(req.newDate)) targetPlan.plannedDates.push(req.newDate);
+          if (req.newShift) targetPlan.dateShifts[req.newDate] = req.newShift === '오전조' ? 'day' : 'afternoon';
+
+          const taskItems = req.taskItems || [];
+          const totalHours = taskItems.reduce((s, it) => s + (parseFloat(it.hours) || 0), 0);
+          if (totalHours > 0) targetPlan.dateHours[req.newDate] = totalHours;
+
+          saveMonthPlan(req.emp, y, m, plan);
+          if (targetPlan !== plan) saveMonthPlan(req.emp, ny, nm, targetPlan);
+
+          // 업무분장에도 반영: 기존 날짜의 업무는 제거, 새 날짜에 추가
+          if (taskItems.length > 0) {
+            const existingTasks = getWorkAssign(req.emp).filter(t => t.date !== req.date);
+            const newTasks = taskItems.map(it => ({
+              id: Date.now() + Math.random(), task: it.task, date: req.newDate, hours: it.hours, note: ''
+            }));
+            saveWorkAssign(req.emp, [...existingTasks, ...newTasks]);
+          }
         }
-        saveMonthPlan(req.emp, y, m, plan);
       }
     }
 
@@ -1858,10 +2408,11 @@ const ADMIN_TAB_COLORS = {
   plan:  { bg:'#FFF7ED', color:'#9A3412', border:'#EA580C' },
   req:   { bg:'#FFF1F2', color:'#9F1239', border:'#E11D48' },
   work:  { bg:'#ECFDF5', color:'#065F46', border:'#059669' },
+  emp:   { bg:'#FAF5FF', color:'#6B21A8', border:'#9333EA' },
 };
 function switchAdminTab(tab) {
-  const secondRow = ['plan','req','work'];
-  ['today','att','cal','plan','req','work'].forEach(t => {
+  const secondRow = ['req','work','emp'];
+  ['today','att','cal','plan','req','work','emp'].forEach(t => {
     const btn = document.getElementById(`adminTab_${t}`);
     const c = ADMIN_TAB_COLORS[t];
     const isActive = t === tab;
@@ -1879,6 +2430,7 @@ function switchAdminTab(tab) {
   if (tab === 'cal')   renderCalendar();
   if (tab === 'req')   renderChangeRequests();
   if (tab === 'work')  initWorkAssignTab();
+  if (tab === 'emp')   renderEmployeeManageList();
 }
 
 // ── 업무분장 ──────────────────────────────────────────
@@ -1891,213 +2443,7 @@ function initWorkAssignTab() {
   renderWorkCurrentStatus();
 }
 
-// ── 업무분장 파일 업로드 ──────────────────────────────────
-
-let _uploadData = [];
-
-function downloadWorkTemplate() {
-  const header = '직원명,업무명,날짜,시간,비고\n';
-  const samples = EMPLOYEES.slice(0, 3).map(emp =>
-    `${emp},강의,2026-06-20,2,\n${emp},안내,2026-06-21,1,`
-  ).join('\n');
-  const blob = new Blob(['﻿' + header + samples], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '업무분장_서식.csv';
-  a.click();
-}
-
-function handleWorkFileDrop(e) {
-  const file = e.dataTransfer.files[0];
-  if (file) { showUploadFileName(file.name); readWorkFile(file); }
-}
-
-function handleWorkFile(input) {
-  const file = input.files[0];
-  if (file) { showUploadFileName(file.name); readWorkFile(file); }
-}
-
-function showParseError(msg) {
-  const el = document.getElementById('workParseError');
-  el.textContent = '⚠ ' + msg;
-  el.style.display = 'block';
-}
-
-function showUploadFileName(name) {
-  document.getElementById('workDropText').textContent = '📎 ' + name;
-  document.getElementById('workDropText').style.color = '#2C4A6E';
-  document.getElementById('workDropSub').textContent = '파일이 선택되었습니다';
-  document.getElementById('workDropSub').style.color = '#16A34A';
-  const bar = document.getElementById('selectedFileBar');
-  bar.style.display = 'flex';
-  document.getElementById('selectedFileName').textContent = '📎 ' + name;
-  document.getElementById('workParseError').style.display = 'none';
-}
-
-function readWorkFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!['csv','xlsx','xls'].includes(ext)) {
-    showToast('CSV 또는 Excel 파일만 지원합니다'); return;
-  }
-  showToast('파일 읽는 중...', 1500);
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      if (typeof XLSX === 'undefined') {
-        showParseError('Excel 라이브러리가 로드되지 않았습니다. 인터넷 연결을 확인하고 페이지를 새로고침 후 다시 시도해주세요.');
-        return;
-      }
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array', codepage: 949 });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-      parseAndPreviewWorkRows(rows);
-    } catch(err) {
-      showParseError('파일 읽기 오류: ' + err.message);
-    }
-  };
-  reader.onerror = () => showParseError('파일을 열 수 없습니다. 파일이 열려있으면 닫고 다시 시도해주세요.');
-  reader.readAsArrayBuffer(file);
-}
-
-function parseAndPreviewWorkRows(rows) {
-  if (!rows || !rows.length) { showToast('파일에 데이터가 없습니다'); return; }
-
-  // 헤더 행에서 열 위치 자동 감지
-  const headerRow = rows[0].map(c => String(c).trim());
-  const colAlias = {
-    emp:   ['이름','직원명','성명','이름 ','직원 이름'],
-    task:  ['업무명','업무','업무 명'],
-    date:  ['날자','날짜','일자','날 자'],
-    hours: ['시간','업무시간','시간수'],
-    note:  ['비고','메모','특이사항']
-  };
-  const idx = { emp:-1, task:-1, date:-1, hours:-1, note:-1 };
-  headerRow.forEach((h, i) => {
-    const trimmed = h.trim();
-    Object.entries(colAlias).forEach(([key, aliases]) => {
-      if (aliases.some(a => trimmed === a || trimmed.includes(a.trim()))) idx[key] = i;
-    });
-  });
-
-  // 헤더 감지 실패시 위치 기반 fallback (날자/이름/업무명/시간 순)
-  const hasHeader = idx.emp !== -1 || idx.task !== -1;
-  const startIdx = hasHeader ? 1 : 0;
-  if (!hasHeader) { idx.date=0; idx.emp=1; idx.task=2; idx.hours=3; idx.note=4; }
-
-  _uploadData = [];
-  for (let i = startIdx; i < rows.length; i++) {
-    const cols = rows[i].map(c => String(c ?? '').trim());
-    const emp  = idx.emp  >= 0 ? cols[idx.emp]  : '';
-    const task = idx.task >= 0 ? cols[idx.task] : '';
-    if (!emp || !task) continue;
-    const rawDate = idx.date >= 0 ? cols[idx.date] : '';
-    _uploadData.push({
-      emp,
-      task,
-      date: convertDate(rawDate),
-      hours: idx.hours >= 0 ? (parseFloat(cols[idx.hours]) || 0) : 0,
-      note:  idx.note  >= 0 ? (cols[idx.note] || '') : ''
-    });
-  }
-  if (!_uploadData.length) { showToast('인식된 데이터가 없습니다. 파일 내용을 확인해주세요.'); return; }
-  renderWorkUploadPreview();
-}
-
-// 다양한 날짜 형식 → YYYY-MM-DD
-function convertDate(raw) {
-  if (!raw) return '';
-  const s = String(raw).trim().replace(/\.+$/, ''); // 끝 점 제거
-  // 2026.6.1 또는 2026.06.01
-  const dotMatch = s.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
-  if (dotMatch) {
-    const [, y, m, d] = dotMatch;
-    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-  }
-  // 2026-06-01 이미 올바른 형식
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // 6/1 또는 6/20 (월/일, 연도 없음 → 올해 기준)
-  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})$/);
-  if (slashMatch) {
-    const y = new Date().getFullYear();
-    return `${y}-${slashMatch[1].padStart(2,'0')}-${slashMatch[2].padStart(2,'0')}`;
-  }
-  return s;
-}
-
-function renderWorkUploadPreview() {
-  const empMap = {};
-  _uploadData.forEach(r => { if (!empMap[r.emp]) empMap[r.emp] = []; empMap[r.emp].push(r); });
-
-  // 직원별 배지
-  let summaryHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px">';
-  Object.entries(empMap).forEach(([emp, tasks]) => {
-    const known = EMPLOYEES.includes(emp);
-    summaryHtml += `<div style="padding:5px 12px;border-radius:10px;background:${known?'#ECFDF5':'#FFF1F2'};border:1.5px solid ${known?'#86EFAC':'#FECACA'}">
-      <span style="font-size:12px;font-weight:800;color:${known?'#166534':'#991B1B'}">${emp}</span>
-      <span style="font-size:11px;margin-left:4px;color:${known?'#16A34A':'#DC2626'}">${tasks.length}건${known?'':' ⚠미등록'}</span>
-    </div>`;
-  });
-  summaryHtml += '</div>';
-
-  // 데이터 테이블
-  const tableHtml = `<table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr style="background:#1E2D3D;position:sticky;top:0">
-      <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700">직원명</th>
-      <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700">업무명</th>
-      <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700">날짜</th>
-      <th style="padding:8px 8px;color:#94C5E8;text-align:center;font-weight:700">시간</th>
-      <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700">비고</th>
-    </tr></thead>
-    <tbody>${_uploadData.map((r, i) => `
-      <tr style="background:${i%2===0?'#fff':'#F8FAFC'};border-bottom:1px solid #E2E8F0">
-        <td style="padding:7px 10px;font-weight:700;color:#1E2D3D">${escHtml(r.emp)}</td>
-        <td style="padding:7px 10px;color:#374151">${escHtml(r.task)}</td>
-        <td style="padding:7px 10px;color:#4338CA;font-weight:600">${r.date}</td>
-        <td style="padding:7px 8px;text-align:center;color:#1B5E42;font-weight:700">${r.hours}h</td>
-        <td style="padding:7px 10px;color:#94A3B8">${escHtml(r.note)}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-
-  document.getElementById('workUploadSummary').innerHTML = summaryHtml;
-  document.getElementById('workUploadTable').innerHTML = tableHtml;
-  document.getElementById('workUploadCount').textContent = `총 ${_uploadData.length}건 / ${Object.keys(empMap).length}명`;
-  document.getElementById('workUploadPreview').style.display = 'block';
-}
-
-function applyWorkUpload(overwrite) {
-  if (!_uploadData.length) return;
-  const empMap = {};
-  const skipped = [];
-  _uploadData.forEach(r => {
-    if (!EMPLOYEES.includes(r.emp)) {
-      if (!skipped.includes(r.emp)) skipped.push(r.emp);
-      return;
-    }
-    if (!empMap[r.emp]) empMap[r.emp] = [];
-    empMap[r.emp].push({ id: Date.now() + Math.random(), task: r.task, date: r.date, hours: r.hours, note: r.note });
-  });
-  Object.entries(empMap).forEach(([emp, newTasks]) => {
-    if (overwrite) {
-      saveWorkAssign(emp, newTasks);
-    } else {
-      saveWorkAssign(emp, [...getWorkAssign(emp), ...newTasks]);
-    }
-  });
-  const totalTasks = Object.values(empMap).reduce((s, a) => s + a.length, 0);
-  const totalEmps = Object.keys(empMap).length;
-  if (skipped.length) {
-    showToast(`⚠ 미등록 직원 제외(${skipped.length}명): ${skipped.join(', ')}`, 4000);
-    setTimeout(() => showToast(`${totalEmps}명, ${totalTasks}건 업무분장이 ${overwrite ? '교체' : '추가'}되었습니다`), 4200);
-  } else {
-    showToast(`${totalEmps}명, ${totalTasks}건 업무분장이 ${overwrite ? '교체' : '추가'}되었습니다`);
-  }
-  _uploadData = [];
-  document.getElementById('workUploadPreview').style.display = 'none';
-  document.getElementById('workFileInput').value = '';
-  renderWorkCurrentStatus();
-}
+// ── 업무분장 현황 ──────────────────────────────────
 
 function renderWorkCurrentStatus() {
   const el = document.getElementById('workCurrentStatus');
@@ -2105,13 +2451,30 @@ function renderWorkCurrentStatus() {
     const tasks = getWorkAssign(emp).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
     if (!tasks.length) return '';
     const total = tasks.reduce((s, t) => s + sumHours(t.hours), 0);
-    const rows = tasks.map((t, i) => `
+
+    // 날짜별로 그룹화
+    const byDate = {};
+    tasks.forEach(t => {
+      const d = t.date || '-';
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(t);
+    });
+    const dates = Object.keys(byDate).sort();
+    const rows = dates.map((d, i) => {
+      const items = byDate[d];
+      const dayTotal = items.reduce((s, t) => s + sumHours(t.hours), 0);
+      const taskChips = items.map(t =>
+        `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;background:#EEF2FF;color:#4338CA;font-weight:700;white-space:nowrap;margin:1px 3px 1px 0">${escHtml(t.task)} ${t.hours}h</span>`
+      ).join('');
+      const notes = items.map(t => t.note).filter(Boolean).join(', ');
+      return `
       <tr style="background:${i%2===0?'#fff':'#F8FAFC'};border-bottom:1px solid #E2E8F0">
-        <td style="padding:7px 10px;color:#4338CA;font-weight:600;white-space:nowrap">${t.date||'-'}</td>
-        <td style="padding:7px 10px;font-weight:700;color:#1E2D3D">${escHtml(t.task)}</td>
-        <td style="padding:7px 8px;text-align:center;font-weight:700;color:#1B5E42;white-space:nowrap">${t.hours}h</td>
-        <td style="padding:7px 10px;font-size:11px;color:#94A3B8">${escHtml(t.note||'')}</td>
-      </tr>`).join('');
+        <td style="padding:7px 10px;color:#4338CA;font-weight:600;white-space:nowrap;vertical-align:top">${d}</td>
+        <td style="padding:7px 10px;vertical-align:top">${taskChips}</td>
+        <td style="padding:7px 8px;text-align:center;font-weight:800;color:#1B5E42;white-space:nowrap;vertical-align:top">${dayTotal}h</td>
+        <td style="padding:7px 10px;font-size:11px;color:#94A3B8;vertical-align:top">${escHtml(notes)}</td>
+      </tr>`;
+    }).join('');
     return `
       <div style="background:#fff;border:1.5px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#F8FAFC;border-bottom:1px solid #E2E8F0">
@@ -2126,8 +2489,8 @@ function renderWorkCurrentStatus() {
           <table style="width:100%;border-collapse:collapse;font-size:12px">
             <thead><tr style="background:#1E2D3D">
               <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700;white-space:nowrap">날짜</th>
-              <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700">업무명</th>
-              <th style="padding:7px 8px;color:#94C5E8;text-align:center;font-weight:700;white-space:nowrap">시간</th>
+              <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700">업무 내역</th>
+              <th style="padding:7px 8px;color:#94C5E8;text-align:center;font-weight:700;white-space:nowrap">합계</th>
               <th style="padding:7px 10px;color:#94C5E8;text-align:left;font-weight:700">비고</th>
             </tr></thead>
             <tbody>${rows}</tbody>
@@ -2558,6 +2921,21 @@ let _workReqRows = [];   // [{task,detail,hours,note}]
 function getWorkReqs() { return sbGet('workassign_requests', []); }
 function saveWorkReqs(reqs) { sbSet('workassign_requests', reqs); }
 
+// 내 업무분장 → 업무 수정 신청을 월간계획의 "날짜/조 변경" 모달과 통일된 화면으로 연결
+function openWorkReqUnified() {
+  const emp = document.getElementById('myWorkName').textContent.replace('님','').trim();
+  const date = _myWorkDateFilter || getTodayStr();
+  const [y, m] = date.slice(0,7).split('-').map(Number);
+  mpEmployee = emp; mpYear = y; mpMonth = m;
+
+  const plan = getMonthPlan(emp, y, m);
+  const shiftKey = (plan?.dateShifts && plan.dateShifts[date]) || plan?.shift || 'day';
+  const currentShiftLabel = SHIFT_INFO[shiftKey]?.label || '오전조';
+
+  document.getElementById('myWorkModal').classList.add('hidden');
+  openDateChangeModal(date, currentShiftLabel);
+}
+
 function openWorkReqModal() {
   _workReqEmp = document.getElementById('myWorkName').textContent.replace('님','').trim();
   const existing = getWorkReqs().find(r => r.emp === _workReqEmp && r.status === 'pending');
@@ -2867,15 +3245,20 @@ function renderTodayDashboard() {
     const rec = getRecord(emp, today);
     const plan = getMonthPlan(emp, y, m);
     let shiftLabel = '';
-    if (plan?.days?.includes(todayDow)) shiftLabel = plan.shiftLabel;
+    let hasPlan = false;
+    if (plan?.plannedDates?.includes(today)) {
+      hasPlan = true;
+      const shiftKey = (plan.dateShifts && plan.dateShifts[today]) || plan.shift || 'day';
+      shiftLabel = SHIFT_INFO[shiftKey]?.label || plan.shiftLabel;
+    }
 
-    // 계획 없지만 실제 출근 기록 있으면 시간으로 조 판단
+    // 계획 없지만 실제 출근 기록 있으면 시간으로 조 판단 (계획 인원에는 포함하지 않음)
     if (!shiftLabel && rec?.checkIn) {
       shiftLabel = rec.checkIn <= '10:00' ? '오전조' : '오후조';
     }
     if (!shiftLabel) return;
 
-    const item = { emp, shiftLabel, checkedIn: !!rec?.checkIn, checkOut: !!rec?.checkOut, inTime: rec?.checkIn || '', outTime: rec?.checkOut || '' };
+    const item = { emp, shiftLabel, hasPlan, checkedIn: !!rec?.checkIn, checkOut: !!rec?.checkOut, inTime: rec?.checkIn || '', outTime: rec?.checkOut || '' };
     if (shiftLabel === '오전조') morningList.push(item);
     else afternoonList.push(item);
   });
@@ -2890,17 +3273,19 @@ function renderTodayDashboard() {
   });
 
   function calcStats(list) {
-    const planned = list.length;
+    const planned = list.filter(x => x.hasPlan).length;
     const checked = list.filter(x => x.checkedIn).length;
-    const rate = planned > 0 ? Math.round(checked / planned * 100) : 0;
-    return { planned, checked, rate };
+    const checkedAmongPlanned = list.filter(x => x.hasPlan && x.checkedIn).length;
+    const rate = planned > 0 ? Math.round(checkedAmongPlanned / planned * 100) : (checked > 0 ? 100 : 0);
+    return { planned, checked, checkedAmongPlanned, rate };
   }
 
   const ms = calcStats(morningList);
   const as = calcStats(afternoonList);
   const totalPlanned = ms.planned + as.planned;
   const totalChecked = ms.checked + as.checked;
-  const totalRate = totalPlanned > 0 ? Math.round(totalChecked / totalPlanned * 100) : 0;
+  const totalCheckedAmongPlanned = ms.checkedAmongPlanned + as.checkedAmongPlanned;
+  const totalRate = totalPlanned > 0 ? Math.round(totalCheckedAmongPlanned / totalPlanned * 100) : (totalChecked > 0 ? 100 : 0);
 
   // KPI 카드
   document.getElementById('kpi_morning_val').textContent = ms.checked + '명';
@@ -2928,12 +3313,7 @@ function renderTodayDashboard() {
 
   function getPlannedCount(emp) {
     const plan = getMonthPlan(emp, y, m);
-    if (!plan?.days) return 0;
-    let cnt = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (plan.days.includes(new Date(y, m-1, d).getDay())) cnt++;
-    }
-    return cnt;
+    return plan?.plannedDates?.length || 0;
   }
 
   function statusBadge(item) {
@@ -2966,9 +3346,26 @@ function renderTodayDashboard() {
     : `<tr><td colspan="7" style="text-align:center;padding:32px;color:#CBD5E1;font-size:13px">오늘 근무 계획이 없습니다</td></tr>`;
 }
 
+function togglePlanLock() {
+  const ym = document.getElementById('adminPlanMonthSelect').value;
+  const [y, m] = ym.split('-').map(Number);
+  const locked = isMonthLocked(y, m);
+  if (!locked && !confirm(`${y}년 ${m}월 계획을 마감하시겠습니까?\n마감 후 직원은 직접 수정할 수 없고, "수정 요청"으로만 변경 가능합니다.`)) return;
+  setMonthLocked(y, m, !locked);
+  showToast(!locked ? `${y}년 ${m}월이 마감되었습니다` : `${y}년 ${m}월 마감이 해제되었습니다`);
+  renderAdminPlanTable();
+}
+
 function renderAdminPlanTable() {
   const ym = document.getElementById('adminPlanMonthSelect').value;
   const [y, m] = ym.split('-').map(Number);
+
+  const locked = isMonthLocked(y, m);
+  const lockBtn = document.getElementById('planLockToggleBtn');
+  lockBtn.textContent = locked ? '🔓 마감 해제' : '🔒 이번달 마감';
+  lockBtn.style.background = locked ? '#ECFDF5' : '#FEF2F2';
+  lockBtn.style.color = locked ? '#166534' : '#DC2626';
+  lockBtn.style.border = locked ? '1.5px solid #86EFAC' : '1.5px solid #FECACA';
 
   let submitted = 0;
   const rows = EMPLOYEES.map((emp, idx) => {
@@ -2983,6 +3380,7 @@ function renderAdminPlanTable() {
       </tr>`;
     }
     const daysStr = plan.workDays.map(d => DAY_NAMES[d]).join(' ');
+    const liveShift = SHIFT_INFO[plan.shift] || SHIFT_INFO.day;
     return `<tr>
       <td style="font-weight:700;color:#0F172A">${emp}</td>
       <td style="text-align:center">
@@ -2990,8 +3388,8 @@ function renderAdminPlanTable() {
       </td>
       <td style="text-align:center;color:#64748B;font-size:12px">${daysStr}</td>
       <td style="text-align:center;font-weight:800;color:#4F46E5">${plan.plannedDates.length}일</td>
-      <td style="text-align:center;color:#10B981;font-weight:600;font-size:12px">${plan.inTime}</td>
-      <td style="text-align:center;color:#F43F5E;font-weight:600;font-size:12px">${plan.outTime}</td>
+      <td style="text-align:center;color:#10B981;font-weight:600;font-size:12px">${liveShift.inTime}</td>
+      <td style="text-align:center;color:#F43F5E;font-weight:600;font-size:12px">${liveShift.outTime}</td>
       <td style="text-align:center"><span style="font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:#EEF2FF;color:#4F46E5">제출완료</span></td>
     </tr>`;
   });
@@ -3000,8 +3398,8 @@ function renderAdminPlanTable() {
 
   // 요약 바
   document.getElementById('planSubmitCount').textContent = submitted;
-  document.getElementById('planUnsubmitCount').textContent = 21 - submitted;
-  document.getElementById('planSubmitBar').style.width = `${Math.round(submitted/21*100)}%`;
+  document.getElementById('planUnsubmitCount').textContent = EMPLOYEES.length - submitted;
+  document.getElementById('planSubmitBar').style.width = `${EMPLOYEES.length ? Math.round(submitted/EMPLOYEES.length*100) : 0}%`;
 }
 
 function exportPlanCSV() {
@@ -3011,8 +3409,9 @@ function exportPlanCSV() {
   EMPLOYEES.forEach(emp => {
     const p = getMonthPlan(emp, y, m);
     if (p) {
+      const liveShift = SHIFT_INFO[p.shift] || SHIFT_INFO.day;
       rows.push([emp, p.shiftLabel, p.workDays.map(d=>DAY_NAMES[d]).join('/'),
-        p.plannedDates.length, p.inTime, p.outTime, '제출', p.submittedAt.slice(0,10)]);
+        p.plannedDates.length, liveShift.inTime, liveShift.outTime, '제출', p.submittedAt.slice(0,10)]);
     } else {
       rows.push([emp,'','','','','','미제출','']);
     }
@@ -3036,6 +3435,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.body.appendChild(loading);
 
   await sbLoadAll();
+  refreshEmployeesFromRoster();
 
   loading.remove();
   initMain();
