@@ -8,6 +8,12 @@
   <meta property="og:description" content="동대문센터 출퇴근 및 업무관리 시스템" />
   <meta property="og:site_name" content="동대문센터 업무관리" />
   <meta name="description" content="동대문센터 출퇴근 및 업무관리 시스템" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1E2D3D" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="업무관리" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -442,11 +448,6 @@
         <button onclick="toggleDay(4)" id="dayBtn_4" class="day-btn py-3 rounded-xl text-sm font-bold border-2" style="border-color:#E2E8F0;background:#fff;color:#94A3B8">목</button>
         <button onclick="toggleDay(5)" id="dayBtn_5" class="day-btn py-3 rounded-xl text-sm font-bold border-2" style="border-color:#E2E8F0;background:#fff;color:#94A3B8">금</button>
         <button onclick="toggleDay(6)" id="dayBtn_6" class="day-btn py-3 rounded-xl text-sm font-bold border-2" style="border-color:#BFDBFE;background:#EFF6FF;color:#3B82F6">토</button>
-      </div>
-      <div class="flex gap-2 mt-3">
-        <button onclick="setWeekdays()" class="flex-1 py-2 rounded-xl text-xs font-semibold" style="background:#F1F5F9;color:#64748B">평일(월~금)</button>
-        <button onclick="setAllDays()" class="flex-1 py-2 rounded-xl text-xs font-semibold" style="background:#F1F5F9;color:#64748B">전일</button>
-        <button onclick="clearDays()" class="flex-1 py-2 rounded-xl text-xs font-semibold" style="background:#F1F5F9;color:#94A3B8">초기화</button>
       </div>
     </div>
 
@@ -3876,6 +3877,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   loading.remove();
   initMain();
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
