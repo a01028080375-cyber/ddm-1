@@ -301,6 +301,18 @@
   </div>
 </div>
 
+<!-- 캘린더 날짜 상세 드로어 (공개/관리자 캘린더 공용, 최상위 배치) -->
+<div id="calDrawer" class="hidden fixed inset-0 z-50 flex items-end" style="background:rgba(15,23,42,.6);backdrop-filter:blur(4px)">
+  <div class="bg-white w-full rounded-t-3xl p-5 max-h-[70vh] overflow-y-auto slide-in" style="box-shadow:0 -8px 40px rgba(15,23,42,.2)">
+    <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:#E2E8F0"></div>
+    <div class="flex justify-between items-center mb-4">
+      <h3 id="calDrawerTitle" class="text-base font-black" style="color:#0F172A"></h3>
+      <button onclick="closeCalDrawer()" class="w-8 h-8 rounded-xl flex items-center justify-center text-lg font-bold" style="background:#F1F5F9;color:#64748B">&times;</button>
+    </div>
+    <div id="calDrawerBody" class="space-y-2"></div>
+  </div>
+</div>
+
 <!-- 업무 수정 신청 (구조화) 모달 -->
 <div id="workReqEditModal" class="hidden fixed inset-0 z-50 flex flex-col fade-in" style="background:var(--bg)">
   <header class="app-header px-5 py-4 flex items-center shrink-0">
@@ -712,16 +724,6 @@
       <div class="py-2 text-center text-xs font-bold" style="color:#3B82F6">토</div>
     </div>
     <div id="calGrid" class="grid grid-cols-7" style="border-left:1px solid #F1F5F9"></div>
-    <div id="calDrawer" class="hidden fixed inset-0 z-50 flex items-end" style="background:rgba(15,23,42,.6);backdrop-filter:blur(4px)">
-      <div class="bg-white w-full rounded-t-3xl p-5 max-h-[70vh] overflow-y-auto slide-in" style="box-shadow:0 -8px 40px rgba(15,23,42,.2)">
-        <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:#E2E8F0"></div>
-        <div class="flex justify-between items-center mb-4">
-          <h3 id="calDrawerTitle" class="text-base font-black" style="color:#0F172A"></h3>
-          <button onclick="closeCalDrawer()" class="w-8 h-8 rounded-xl flex items-center justify-center text-lg font-bold" style="background:#F1F5F9;color:#64748B">&times;</button>
-        </div>
-        <div id="calDrawerBody" class="space-y-2"></div>
-      </div>
-    </div>
   </div>
 
   <!-- 월간계획 현황 탭 -->
