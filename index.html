@@ -626,7 +626,6 @@
           <div id="kpi_morning_planned" class="text-sm font-bold mb-1" style="color:#64748B">계획 0명</div>
           <div style="display:flex;align-items:baseline;gap:6px">
             <div id="kpi_morning_val" class="text-sm font-bold" style="color:var(--indigo)">출근 0명</div>
-            <div id="kpi_morning_rate" class="text-sm font-bold" style="color:#94A3B8">출근율 0%</div>
           </div>
         </div>
         <div class="kpi-card">
@@ -634,7 +633,6 @@
           <div id="kpi_afternoon_planned" class="text-sm font-bold mb-1" style="color:#64748B">계획 0명</div>
           <div style="display:flex;align-items:baseline;gap:6px">
             <div id="kpi_afternoon_val" class="text-sm font-bold" style="color:var(--gold)">출근 0명</div>
-            <div id="kpi_afternoon_rate" class="text-sm font-bold" style="color:#94A3B8">출근율 0%</div>
           </div>
         </div>
         <div class="kpi-card">
@@ -643,11 +641,10 @@
           <div id="kpi_monthdays_sub" class="text-xs mt-1" style="color:#94A3B8">전직원 합산</div>
         </div>
         <div class="kpi-card">
-          <div class="text-xs font-semibold mb-2" style="color:#94A3B8;letter-spacing:.5px">오늘 총 출근율</div>
+          <div class="text-xs font-semibold mb-2" style="color:#94A3B8;letter-spacing:.5px">오늘 총 합</div>
           <div id="kpi_total_planned" class="text-sm font-bold mb-1" style="color:#64748B">계획 0명</div>
           <div style="display:flex;align-items:baseline;gap:6px">
             <div id="kpi_total_checked" class="text-sm font-bold" style="color:var(--emerald)">출근 0명</div>
-            <div id="kpi_total_rate" class="text-sm font-bold" style="color:#94A3B8">출근율 0%</div>
           </div>
         </div>
       </div>
@@ -678,12 +675,11 @@
     </div>
 
     <!-- 요약 카드 -->
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
-      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">출근율</div><div id="attRateVal" class="text-xl font-black" style="color:var(--indigo)">0%</div></div>
-      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">정상출근</div><div id="attPresentVal" class="text-xl font-black" style="color:#16A34A">0</div></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">정상</div><div id="attPresentVal" class="text-xl font-black" style="color:#16A34A">0</div></div>
       <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">지각</div><div id="attLateVal" class="text-xl font-black" style="color:#CA8A04">0</div></div>
       <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">결근</div><div id="attAbsentVal" class="text-xl font-black" style="color:#DC2626">0</div></div>
-      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">미계획출근</div><div id="attUnplannedVal" class="text-xl font-black" style="color:#A855F7">0</div></div>
+      <div class="kpi-card" style="padding:10px"><div class="text-xs font-semibold" style="color:#94A3B8">기타</div><div id="attUnplannedVal" class="text-xl font-black" style="color:#A855F7">0</div></div>
     </div>
 
     <!-- 범례 -->
@@ -691,7 +687,7 @@
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#16A34A;display:inline-block"></span>정상</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#FACC15;display:inline-block"></span>지각</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#DC2626;display:inline-block"></span>결근</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#A855F7;display:inline-block"></span>미계획출근</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#A855F7;display:inline-block"></span>기타</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:1px;border:1.5px solid #CBD5E1;display:inline-block"></span>예정/없음</span>
     </div>
 
@@ -810,13 +806,13 @@
       <table style="border-collapse:collapse;font-size:12px;min-width:900px;width:100%">
         <thead><tr>
           <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700;white-space:nowrap;position:sticky;top:0;background:#1E2D3D;z-index:2">날짜</th>
-          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">근무시간합(오전)</th>
+          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">근무시간<br>(오전)</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">강의</th>
-          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">보조 &amp; 안내</th>
+          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">보조&amp;<br>안내</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">상담외</th>
-          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">근무시간합(오후)</th>
+          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">근무시간<br>(오후)</th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">강의</th>
-          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">보조 &amp; 안내</th>
+          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">보조&amp;<br>안내</th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">상담외</th>
           <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700;position:sticky;top:0;background:#1E2D3D;z-index:2">변경신청</th>
         </tr></thead>
@@ -1582,8 +1578,6 @@ function renderAdminTable() {
     </tr>`;
   }).join('');
 
-  const totalSlots = present + late + absent;
-  document.getElementById('attRateVal').textContent = totalSlots ? `${Math.round((present+late)/totalSlots*100)}%` : '0%';
   document.getElementById('attPresentVal').textContent = present;
   document.getElementById('attLateVal').textContent = late;
   document.getElementById('attAbsentVal').textContent = absent;
@@ -3739,14 +3733,11 @@ function renderTodayDashboard() {
   // KPI 카드
   document.getElementById('kpi_morning_planned').textContent = `계획 ${ms.planned}명`;
   document.getElementById('kpi_morning_val').textContent = `출근 ${ms.checked}명`;
-  document.getElementById('kpi_morning_rate').textContent = `출근율 ${ms.rate}%`;
   document.getElementById('kpi_afternoon_planned').textContent = `계획 ${as.planned}명`;
   document.getElementById('kpi_afternoon_val').textContent = `출근 ${as.checked}명`;
-  document.getElementById('kpi_afternoon_rate').textContent = `출근율 ${as.rate}%`;
   document.getElementById('kpi_monthdays').textContent = totalMonthDays + '일';
   document.getElementById('kpi_total_planned').textContent = `계획 ${totalPlanned}명`;
   document.getElementById('kpi_total_checked').textContent = `출근 ${totalChecked}명`;
-  document.getElementById('kpi_total_rate').textContent = `출근율 ${totalRate}%`;
 
   // 테이블 — 출근자 먼저, 미출근자 나중
   const allList = [...morningList, ...afternoonList].sort((a, b) => {
