@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>동대문센터 업무관리</title>
+  <meta property="og:title" content="동대문센터 업무관리" />
+  <meta property="og:description" content="동대문센터 출퇴근 및 업무관리 시스템" />
+  <meta property="og:site_name" content="동대문센터 업무관리" />
+  <meta name="description" content="동대문센터 출퇴근 및 업무관리 시스템" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -159,9 +163,9 @@
 <div id="mainScreen" class="min-h-screen">
   <header class="app-header px-5 py-4 flex justify-between items-center sticky top-0 z-10">
     <div>
-      <p class="text-xs font-semibold tracking-widest mb-0.5" style="color:#7B90A8">동대문센터</p>
-      <h1 class="text-xl font-black tracking-tight" style="color:#1E2D3D">업무관리</h1>
-      <p id="todayDate" class="text-xs mt-0.5" style="color:#8FA3B1"></p>
+      <p class="text-xs font-semibold tracking-widest mb-0.5" style="color:#7B90A8;white-space:nowrap">동대문센터</p>
+      <h1 class="text-xl font-black tracking-tight" style="color:#1E2D3D;white-space:nowrap">업무관리</h1>
+      <p id="todayDate" class="text-xs mt-0.5" style="color:#8FA3B1;white-space:nowrap"></p>
     </div>
     <div class="flex gap-2 items-center">
       <button onclick="openPublicCal()" class="text-xs font-bold px-4 py-2 rounded-xl" style="background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE">캘린더</button>
@@ -1123,8 +1127,8 @@ function initMain() {
   clearJune2026Schedule();
   const today = new Date();
   const days = ['일','월','화','수','목','금','토'];
-  document.getElementById('todayDate').innerHTML =
-    `${today.getFullYear()}년<br>${today.getMonth()+1}월 ${today.getDate()}일 (${days[today.getDay()]})`;
+  document.getElementById('todayDate').textContent =
+    `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 (${days[today.getDay()]})`;
 
   const grid = document.getElementById('employeeGrid');
   grid.innerHTML = '';
