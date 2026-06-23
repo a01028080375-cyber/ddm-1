@@ -1270,7 +1270,7 @@ function showGpsAlert(msg) {
   document.getElementById('gpsAlertModal').classList.remove('hidden');
 }
 
-const GPS_CHECK_ENABLED = false; // 위치 확인(반경 500m 제한) 비활성화
+const GPS_CHECK_ENABLED = true; // 위치 확인(반경 500m 제한) 활성화됨
 
 function verifyLocation(onSuccess) {
   if (!GPS_CHECK_ENABLED) { onSuccess(); return; }
