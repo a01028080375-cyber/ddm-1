@@ -313,7 +313,7 @@
 
 <!-- 캘린더 날짜 상세 드로어 (공개/관리자 캘린더 공용, 최상위 배치) -->
 <div id="calDrawer" class="hidden fixed inset-0 z-50 flex items-end" style="background:rgba(15,23,42,.6);backdrop-filter:blur(4px)">
-  <div class="bg-white w-full rounded-t-3xl p-5 max-h-[70vh] overflow-y-auto slide-in" style="box-shadow:0 -8px 40px rgba(15,23,42,.2)">
+  <div class="bg-white w-full rounded-t-3xl p-5 max-h-[70vh] overflow-y-auto slide-in" style="box-shadow:0 -8px 40px rgba(15,23,42,.2);max-width:480px;margin:0 auto">
     <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:#E2E8F0"></div>
     <div class="flex justify-between items-center mb-4">
       <h3 id="calDrawerTitle" class="text-base font-black" style="color:#0F172A"></h3>
@@ -2227,7 +2227,11 @@ function renderCalendarHTML(y, m) {
     const numColor = isSun ? '#F43F5E' : isSat ? '#3B82F6' : '#1E2D3D';
 
     const workers = getDayWorkers(dateStr);
-    const empButtons = buildEmpButtonsHTML(workers, dateStr, 1);
+    const empButtons = buildEmpButtonsHTML(workers.slice(0, 2), dateStr, 1);
+    const moreCount = workers.length - 2;
+    const moreLabel = moreCount > 0
+      ? `<div style="font-size:10px;font-weight:700;color:#94A3B8;text-align:center;padding:1px 0">+${moreCount}명 더보기</div>`
+      : '';
     const daySummary = buildDaySummaryHTML(workers, 1);
 
     const compactDots = workers.slice(0, 6).map(w => {
@@ -2257,6 +2261,7 @@ function renderCalendarHTML(y, m) {
       <div class="cal-detail">
         ${daySummary}
         ${empButtons}
+        ${moreLabel}
       </div>
       ${compactView}
     </div>`;
