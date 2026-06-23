@@ -1494,6 +1494,8 @@ function renderOverallScheduleTable() {
 
 function closeAdmin() {
   document.getElementById('adminScreen').classList.add('hidden');
+  refreshEmployeesFromRoster();
+  initMain();
 }
 
 function populateAdminMonthSelect() {
