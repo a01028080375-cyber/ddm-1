@@ -199,6 +199,18 @@
   </div>
 </div>
 
+<!-- 월간계획 제출 완료 안내 팝업 -->
+<div id="planSubmittedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center fade-in" style="background:rgba(15,23,42,0.5);backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:20px;padding:28px 24px;width:300px;box-shadow:0 8px 40px rgba(15,23,42,0.25);text-align:center">
+    <div style="width:48px;height:48px;border-radius:50%;background:#ECFDF5;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+      <span style="font-size:24px">✅</span>
+    </div>
+    <p id="planSubmittedTitle" style="font-size:16px;font-weight:900;color:#0F172A;margin-bottom:6px"></p>
+    <p style="font-size:13px;color:#64748B;margin-bottom:20px">제출됨 (마감 전까지 수정 가능)</p>
+    <button onclick="document.getElementById('planSubmittedModal').classList.add('hidden')" style="width:100%;padding:11px;border-radius:12px;font-size:13px;font-weight:700;background:#2C4A6E;color:#fff;border:none;cursor:pointer">확인</button>
+  </div>
+</div>
+
 <!-- 범용 커스텀 확인창 (브라우저 기본 confirm() 대체) -->
 <div id="genericConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center fade-in" style="background:rgba(15,23,42,0.5);backdrop-filter:blur(4px)">
   <div style="background:#fff;border-radius:20px;padding:24px;width:300px;box-shadow:0 8px 40px rgba(15,23,42,0.25)">
@@ -1497,7 +1509,7 @@ function renderOverallScheduleTable() {
 
   lastOverallRows = rows;
   const fmt = (arr) => arr.length ? arr.join('<br>') : '<span style="color:#CBD5E1">-</span>';
-  const fmtRole = (arr) => arr.length ? arr.join(', ') : '<span style="color:#CBD5E1">-</span>';
+  const fmtRole = fmt;
 
   document.getElementById('overallScheduleBody').innerHTML = rows.map((r, i) => {
     const rowBg = i % 2 === 0 ? '#fff' : '#FAFBFC';
@@ -1524,7 +1536,7 @@ function renderOverallScheduleTable() {
 function exportOverallCSV() {
   const ym = document.getElementById('overallMonthSelect').value;
   const dayNames = ['일','월','화','수','목','금','토'];
-  const joinArr = (arr) => arr.length ? arr.join(' / ') : '';
+  const joinArr = (arr) => arr.length ? arr.join('\n') : '';
   const rows = [['날짜','오전 근무자','오전 강의','오전 보조&안내','오전 상담','오전 커뮤니티','오전 기타','오후 근무자','오후 강의','오후 보조&안내','오후 상담','오후 커뮤니티','오후 기타','변경신청']];
   lastOverallRows.forEach(r => {
     rows.push([
@@ -2162,7 +2174,8 @@ function submitMonthPlan() {
     saveWorkAssign(mpEmployee, [...existingTasks, ...newTasks]);
   }
 
-  showToast(`${mpYear}년 ${mpMonth}월 계획이 제출되었습니다!`);
+  document.getElementById('planSubmittedTitle').textContent = `${mpYear}년 ${mpMonth}월 계획이 제출되었습니다!`;
+  document.getElementById('planSubmittedModal').classList.remove('hidden');
   renderDateChangeSection();
   renderFinalScheduleCard(getMonthPlan(mpEmployee, mpYear, mpMonth));
   initMain();
