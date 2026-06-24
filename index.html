@@ -1486,7 +1486,7 @@ function renderOverallScheduleTable() {
   }
 
   lastOverallRows = rows;
-  const cellOrDash = (v) => (v === null || v === undefined) ? '<span style="color:#CBD5E1">-</span>' : `${v}h`;
+  const cellOrDash = (v) => (v === null || v === undefined) ? '<span style="color:#CBD5E1">-</span>' : `${v}`;
 
   document.getElementById('overallScheduleBody').innerHTML = rows.map((r, i) => {
     const rowBg = i % 2 === 0 ? '#fff' : '#FAFBFC';
@@ -1530,7 +1530,7 @@ function renderOverallScheduleTable() {
 function exportOverallCSV() {
   const ym = document.getElementById('overallMonthSelect').value;
   const dayNames = ['일','월','화','수','목','금','토'];
-  const v = (n) => (n === null || n === undefined) ? '' : `${n}h`;
+  const v = (n) => (n === null || n === undefined) ? '' : `${n}`;
   const rows = [['날짜','오전 근무자','오전 강의','오전 보조&안내','오전 상담','오전 커뮤니티','오전 기타','오후 근무자','오후 강의','오후 보조&안내','오후 상담','오후 커뮤니티','오후 기타','변경신청']];
   lastOverallRows.forEach(r => {
     const dateLabel = `${r.dateStr} (${dayNames[r.dow]})`;
