@@ -819,7 +819,7 @@
     <div class="card" style="overflow:auto;padding:0;max-height:70vh">
       <table style="border-collapse:collapse;font-size:12px;min-width:900px;width:100%">
         <thead><tr>
-          <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700;white-space:nowrap;position:sticky;top:0;background:#1E2D3D;z-index:2">날짜</th>
+          <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700;white-space:nowrap;position:sticky;top:0;left:0;background:#1E2D3D;z-index:3">날짜</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2"><span style="white-space:nowrap">근무시간</span><br><span style="white-space:nowrap">(오전)</span></th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">강의</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">보조&amp;<br>안내</th>
@@ -1490,7 +1490,7 @@ function renderOverallScheduleTable() {
     const rowBg = i % 2 === 0 ? '#fff' : '#FAFBFC';
     const dowColor = r.dow === 0 ? '#F43F5E' : r.dow === 6 ? '#3B82F6' : '#475569';
     return `<tr style="border-bottom:1px solid #F1F5F9;background:${rowBg};vertical-align:top">
-      <td style="padding:8px 10px;font-weight:700;color:${dowColor};white-space:nowrap">${r.dateStr.slice(5)} (${dayNames[r.dow]})</td>
+      <td style="padding:8px 10px;font-weight:700;color:${dowColor};white-space:nowrap;position:sticky;left:0;background:${rowBg};z-index:1">${r.dateStr.slice(5)} (${dayNames[r.dow]})</td>
       <td style="padding:8px 10px;color:#166534">${fmt(r.morningWorkers)}</td>
       <td style="padding:8px 10px;color:#166534">${lectureAm}</td>
       <td style="padding:8px 10px;color:#166534">${assistGuideAm}</td>
