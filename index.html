@@ -1452,13 +1452,7 @@ function renderOverallScheduleTable() {
     const dateStr = `${ym}-${String(d).padStart(2,'0')}`;
     const dow = new Date(y, m - 1, d).getDay();
 
-    const morningWorkers = [], afternoonWorkers = [];
-    const morningLecture = [], afternoonLecture = [];
-    const morningAssist = [], afternoonAssist = [];
-    const morningCounsel = [], afternoonCounsel = [];
-    const morningCommunity = [], afternoonCommunity = [];
-    const morningEtc = [], afternoonEtc = [];
-
+    const entries = [];
     EMPLOYEES.forEach(emp => {
       const plan = getMonthPlan(emp, y, m);
       if (!plan?.plannedDates?.includes(dateStr)) return;
@@ -1466,85 +1460,94 @@ function renderOverallScheduleTable() {
       const isMorning = shiftKey === 'day';
 
       const empTasks = getWorkAssign(emp).filter(t => t.date === dateStr);
-      const lectureTasks = empTasks.filter(t => t.task === '강의');
-      const assistTasks = empTasks.filter(t => t.task === '보조&안내');
-      const counselTasks = empTasks.filter(t => t.task === '상담');
-      const communityTasks = empTasks.filter(t => t.task === '커뮤니티');
-      const etcTasks = empTasks.filter(t => t.task === '기타');
-
+      const sumOf = (task) => empTasks.filter(t => t.task === task).reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+      const hasOf = (task) => empTasks.some(t => t.task === task);
       // 근무시간: 업무분장(workassign) 합계 기준 (없으면 0h)
       const hours = empTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-      const label = `${emp} (${hours}h)`;
-      (isMorning ? morningWorkers : afternoonWorkers).push(label);
 
-      if (lectureTasks.length > 0) {
-        const total = lectureTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-        (isMorning ? morningLecture : afternoonLecture).push(`${emp} (${total}h)`);
-      }
-      if (assistTasks.length > 0) {
-        const total = assistTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-        (isMorning ? morningAssist : afternoonAssist).push(`${emp} (${total}h)`);
-      }
-      if (counselTasks.length > 0) {
-        const total = counselTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-        (isMorning ? morningCounsel : afternoonCounsel).push(`${emp} (${total}h)`);
-      }
-      if (communityTasks.length > 0) {
-        const total = communityTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-        (isMorning ? morningCommunity : afternoonCommunity).push(`${emp} (${total}h)`);
-      }
-      if (etcTasks.length > 0) {
-        const total = etcTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-        (isMorning ? morningEtc : afternoonEtc).push(`${emp} (${total}h)`);
-      }
+      entries.push({
+        emp, isMorning, hours,
+        lecture: hasOf('강의') ? sumOf('강의') : null,
+        assist: hasOf('보조&안내') ? sumOf('보조&안내') : null,
+        counsel: hasOf('상담') ? sumOf('상담') : null,
+        community: hasOf('커뮤니티') ? sumOf('커뮤니티') : null,
+        etc: hasOf('기타') ? sumOf('기타') : null
+      });
     });
+    // 오전조 먼저, 오후조 나중 순서로 정렬
+    entries.sort((a, b) => (a.isMorning === b.isMorning) ? 0 : (a.isMorning ? -1 : 1));
 
     const reqsForDate = getLatestReqsForDate(changeReqs, dateStr);
     const reqText = reqsForDate.length > 0
       ? `<button type="button" onclick="showOverallReqHistory('${dateStr}')" style="background:#FEF3C7;color:#B45309;border:1px solid #FDE68A;border-radius:14px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">🔔 변경신청있음 (${reqsForDate.length})</button>`
       : '';
 
-    rows.push({ dateStr, dow, d, morningWorkers, afternoonWorkers, morningLecture, afternoonLecture, morningAssist, afternoonAssist, morningCounsel, afternoonCounsel, morningCommunity, afternoonCommunity, morningEtc, afternoonEtc, reqText });
+    rows.push({ dateStr, dow, d, entries, reqText });
   }
 
   lastOverallRows = rows;
-  const fmt = (arr) => arr.length ? arr.join('<br>') : '<span style="color:#CBD5E1">-</span>';
-  const fmtRole = fmt;
+  const cellOrDash = (v) => (v === null || v === undefined) ? '<span style="color:#CBD5E1">-</span>' : `${v}h`;
 
   document.getElementById('overallScheduleBody').innerHTML = rows.map((r, i) => {
     const rowBg = i % 2 === 0 ? '#fff' : '#FAFBFC';
     const dowColor = r.dow === 0 ? '#F43F5E' : r.dow === 6 ? '#3B82F6' : '#475569';
-    return `<tr style="border-bottom:1px solid #F1F5F9;background:${rowBg};vertical-align:top">
-      <td style="padding:8px 10px;font-weight:700;color:${dowColor};white-space:nowrap;position:sticky;left:0;background:${rowBg};z-index:1">${r.dateStr.slice(5)} (${dayNames[r.dow]})</td>
-      <td style="padding:8px 10px;color:#166534">${fmt(r.morningWorkers)}</td>
-      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningLecture)}</td>
-      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningAssist)}</td>
-      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningCounsel)}</td>
-      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningCommunity)}</td>
-      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningEtc)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmt(r.afternoonWorkers)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonLecture)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonAssist)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonCounsel)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonCommunity)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonEtc)}</td>
-      <td style="padding:8px 10px;font-size:11px;color:#475569">${r.reqText || '<span style="color:#CBD5E1">-</span>'}</td>
+    const entries = r.entries.length > 0 ? r.entries : [null];
+    const rowSpan = entries.length;
+    return entries.map((e, ei) => {
+      const dateCell = ei === 0
+        ? `<td rowspan="${rowSpan}" style="padding:8px 10px;font-weight:700;color:${dowColor};white-space:nowrap;position:sticky;left:0;background:${rowBg};z-index:1;border-right:1px solid #F1F5F9">${r.dateStr.slice(5)} (${dayNames[r.dow]})</td>`
+        : '';
+      const reqCell = ei === 0
+        ? `<td rowspan="${rowSpan}" style="padding:8px 10px;font-size:11px;color:#475569">${r.reqText || '<span style="color:#CBD5E1">-</span>'}</td>`
+        : '';
+      const trTop = ei === 0 ? '' : 'border-top:none;';
+      if (!e) {
+        return `<tr style="border-bottom:1px solid #F1F5F9;background:${rowBg};vertical-align:top;${trTop}">
+          ${dateCell}
+          <td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td>
+          <td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td><td style="padding:8px 10px;color:#CBD5E1">-</td>
+          ${reqCell}
+        </tr>`;
+      }
+      const empLabel = `${e.emp} (${e.hours}h)`;
+      const dash = '<span style="color:#CBD5E1">-</span>';
+      const amCells = e.isMorning
+        ? `<td style="padding:8px 10px;color:#166534;font-weight:700">${empLabel}</td><td style="padding:8px 10px;color:#166534">${cellOrDash(e.lecture)}</td><td style="padding:8px 10px;color:#166534">${cellOrDash(e.assist)}</td><td style="padding:8px 10px;color:#166534">${cellOrDash(e.counsel)}</td><td style="padding:8px 10px;color:#166534">${cellOrDash(e.community)}</td><td style="padding:8px 10px;color:#166534">${cellOrDash(e.etc)}</td>`
+        : `<td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td>`;
+      const pmCells = !e.isMorning
+        ? `<td style="padding:8px 10px;color:#C2410C;font-weight:700">${empLabel}</td><td style="padding:8px 10px;color:#C2410C">${cellOrDash(e.lecture)}</td><td style="padding:8px 10px;color:#C2410C">${cellOrDash(e.assist)}</td><td style="padding:8px 10px;color:#C2410C">${cellOrDash(e.counsel)}</td><td style="padding:8px 10px;color:#C2410C">${cellOrDash(e.community)}</td><td style="padding:8px 10px;color:#C2410C">${cellOrDash(e.etc)}</td>`
+        : `<td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td><td style="padding:8px 10px">${dash}</td>`;
+      return `<tr style="background:${rowBg};vertical-align:top;${ei === entries.length - 1 ? 'border-bottom:1px solid #F1F5F9' : ''}">
+      ${dateCell}
+      ${amCells}
+      ${pmCells}
+      ${reqCell}
     </tr>`;
+    }).join('');
   }).join('');
 }
 
 function exportOverallCSV() {
   const ym = document.getElementById('overallMonthSelect').value;
   const dayNames = ['일','월','화','수','목','금','토'];
-  const joinArr = (arr) => arr.length ? arr.join('\n') : '';
+  const v = (n) => (n === null || n === undefined) ? '' : `${n}h`;
   const rows = [['날짜','오전 근무자','오전 강의','오전 보조&안내','오전 상담','오전 커뮤니티','오전 기타','오후 근무자','오후 강의','오후 보조&안내','오후 상담','오후 커뮤니티','오후 기타','변경신청']];
   lastOverallRows.forEach(r => {
-    rows.push([
-      `${r.dateStr} (${dayNames[r.dow]})`,
-      joinArr(r.morningWorkers), joinArr(r.morningLecture), joinArr(r.morningAssist), joinArr(r.morningCounsel), joinArr(r.morningCommunity), joinArr(r.morningEtc),
-      joinArr(r.afternoonWorkers), joinArr(r.afternoonLecture), joinArr(r.afternoonAssist), joinArr(r.afternoonCounsel), joinArr(r.afternoonCommunity), joinArr(r.afternoonEtc),
-      r.reqText ? '있음' : ''
-    ]);
+    const dateLabel = `${r.dateStr} (${dayNames[r.dow]})`;
+    const hasReq = r.reqText ? '있음' : '';
+    if (r.entries.length === 0) {
+      rows.push([dateLabel, '', '', '', '', '', '', '', '', '', '', '', '', hasReq]);
+      return;
+    }
+    r.entries.forEach(e => {
+      const empLabel = `${e.emp} (${e.hours}h)`;
+      rows.push([
+        dateLabel,
+        e.isMorning ? empLabel : '', e.isMorning ? v(e.lecture) : '', e.isMorning ? v(e.assist) : '', e.isMorning ? v(e.counsel) : '', e.isMorning ? v(e.community) : '', e.isMorning ? v(e.etc) : '',
+        !e.isMorning ? empLabel : '', !e.isMorning ? v(e.lecture) : '', !e.isMorning ? v(e.assist) : '', !e.isMorning ? v(e.counsel) : '', !e.isMorning ? v(e.community) : '', !e.isMorning ? v(e.etc) : '',
+        hasReq
+      ]);
+    });
   });
   const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
