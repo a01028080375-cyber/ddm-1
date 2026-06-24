@@ -604,7 +604,6 @@
       <button onclick="closeAdmin()" style="padding:6px 12px;border-radius:10px;background:#DDE3EA;border:none;cursor:pointer;font-size:12px;font-weight:700;color:#3A5A72;display:flex;align-items:center;gap:4px">
         <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>이전화면
       </button>
-      <button id="adminExportBtn" onclick="exportCSV()" class="text-xs font-bold px-4 py-2 rounded-xl" style="background:#E8EEF5;color:#3A6EA5;border:1px solid #C8D8E8">CSV</button>
     </div>
   </header>
 
@@ -705,6 +704,7 @@
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#DC2626;display:inline-block"></span>결근</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#A855F7;display:inline-block"></span>기타</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:1px;border:1.5px solid #CBD5E1;display:inline-block"></span>예정/없음</span>
+      <button onclick="exportCSV()" class="ml-auto text-xs font-bold px-3 py-1.5 rounded-xl text-white" style="background:var(--indigo)">CSV</button>
     </div>
 
     <!-- 직원×날짜 매트릭스 -->
@@ -815,6 +815,7 @@
     <div class="flex items-center gap-3 mb-4">
       <select id="overallMonthSelect" onchange="renderOverallScheduleTable()"
         class="px-3 py-2 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"></select>
+      <button onclick="exportOverallCSV()" class="ml-auto text-xs font-bold px-4 py-2 rounded-xl text-white" style="background:var(--indigo)">CSV</button>
     </div>
     <div class="card" style="overflow:auto;padding:0;max-height:70vh">
       <table style="border-collapse:collapse;font-size:12px;min-width:900px;width:100%">
@@ -823,11 +824,15 @@
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2"><span style="white-space:nowrap">근무시간</span><br><span style="white-space:nowrap">(오전)</span></th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">강의</th>
           <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">보조&amp;<br>안내</th>
-          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">상담외</th>
+          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">상담</th>
+          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">커뮤니티</th>
+          <th style="padding:8px 10px;color:#166534;text-align:left;font-weight:700;position:sticky;top:0;background:#DCFCE7;z-index:2">기타</th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2"><span style="white-space:nowrap">근무시간</span><br><span style="white-space:nowrap">(오후)</span></th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">강의</th>
           <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">보조&amp;<br>안내</th>
-          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">상담외</th>
+          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">상담</th>
+          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">커뮤니티</th>
+          <th style="padding:8px 10px;color:#C2410C;text-align:left;font-weight:700;position:sticky;top:0;background:#FFEDD5;z-index:2">기타</th>
           <th style="padding:8px 10px;color:#94C5E8;text-align:left;font-weight:700;position:sticky;top:0;background:#1E2D3D;z-index:2">변경신청</th>
         </tr></thead>
         <tbody id="overallScheduleBody"></tbody>
@@ -1421,6 +1426,8 @@ function getLatestReqsForDate(changeReqs, dateStr) {
   return [...latestByEmp.values()];
 }
 
+let lastOverallRows = [];
+
 function renderOverallScheduleTable() {
   const ym = document.getElementById('overallMonthSelect').value;
   const [y, m] = ym.split('-').map(Number);
@@ -1436,7 +1443,9 @@ function renderOverallScheduleTable() {
     const morningWorkers = [], afternoonWorkers = [];
     const morningLecture = [], afternoonLecture = [];
     const morningAssist = [], afternoonAssist = [];
-    const morningOther = [], afternoonOther = [];
+    const morningCounsel = [], afternoonCounsel = [];
+    const morningCommunity = [], afternoonCommunity = [];
+    const morningEtc = [], afternoonEtc = [];
 
     EMPLOYEES.forEach(emp => {
       const plan = getMonthPlan(emp, y, m);
@@ -1447,7 +1456,9 @@ function renderOverallScheduleTable() {
       const empTasks = getWorkAssign(emp).filter(t => t.date === dateStr);
       const lectureTasks = empTasks.filter(t => t.task === '강의');
       const assistTasks = empTasks.filter(t => t.task === '보조&안내');
-      const otherTasks = empTasks.filter(t => t.task && t.task !== '강의' && t.task !== '보조&안내');
+      const counselTasks = empTasks.filter(t => t.task === '상담');
+      const communityTasks = empTasks.filter(t => t.task === '커뮤니티');
+      const etcTasks = empTasks.filter(t => t.task === '기타');
 
       // 근무시간: 업무분장(workassign) 합계 기준 (없으면 0h)
       const hours = empTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
@@ -1462,11 +1473,17 @@ function renderOverallScheduleTable() {
         const total = assistTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
         (isMorning ? morningAssist : afternoonAssist).push(`${emp} (${total}h)`);
       }
-      if (otherTasks.length > 0) {
-        const total = otherTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
-        const detail = otherTasks.map(t => `${t.task} ${t.hours || 0}h`).join(', ');
-        const entry = `${emp}: ${detail} (합계 ${total}h)`;
-        (isMorning ? morningOther : afternoonOther).push(entry);
+      if (counselTasks.length > 0) {
+        const total = counselTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+        (isMorning ? morningCounsel : afternoonCounsel).push(`${emp} (${total}h)`);
+      }
+      if (communityTasks.length > 0) {
+        const total = communityTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+        (isMorning ? morningCommunity : afternoonCommunity).push(`${emp} (${total}h)`);
+      }
+      if (etcTasks.length > 0) {
+        const total = etcTasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+        (isMorning ? morningEtc : afternoonEtc).push(`${emp} (${total}h)`);
       }
     });
 
@@ -1475,33 +1492,54 @@ function renderOverallScheduleTable() {
       ? `<button type="button" onclick="showOverallReqHistory('${dateStr}')" style="background:#FEF3C7;color:#B45309;border:1px solid #FDE68A;border-radius:14px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">🔔 변경신청있음 (${reqsForDate.length})</button>`
       : '';
 
-    rows.push({ dateStr, dow, d, morningWorkers, afternoonWorkers, morningLecture, afternoonLecture, morningAssist, afternoonAssist, morningOther, afternoonOther, reqText });
+    rows.push({ dateStr, dow, d, morningWorkers, afternoonWorkers, morningLecture, afternoonLecture, morningAssist, afternoonAssist, morningCounsel, afternoonCounsel, morningCommunity, afternoonCommunity, morningEtc, afternoonEtc, reqText });
   }
 
+  lastOverallRows = rows;
   const fmt = (arr) => arr.length ? arr.join('<br>') : '<span style="color:#CBD5E1">-</span>';
   const fmtRole = (arr) => arr.length ? arr.join(', ') : '<span style="color:#CBD5E1">-</span>';
-  const fmtOther = (arr) => arr.length ? arr.join('<br>') : '<span style="color:#CBD5E1">-</span>';
 
   document.getElementById('overallScheduleBody').innerHTML = rows.map((r, i) => {
-    const lectureAm = fmtOther(r.morningLecture);
-    const lecturePm = fmtOther(r.afternoonLecture);
-    const assistGuideAm = fmtRole(r.morningAssist);
-    const assistGuidePm = fmtRole(r.afternoonAssist);
     const rowBg = i % 2 === 0 ? '#fff' : '#FAFBFC';
     const dowColor = r.dow === 0 ? '#F43F5E' : r.dow === 6 ? '#3B82F6' : '#475569';
     return `<tr style="border-bottom:1px solid #F1F5F9;background:${rowBg};vertical-align:top">
       <td style="padding:8px 10px;font-weight:700;color:${dowColor};white-space:nowrap;position:sticky;left:0;background:${rowBg};z-index:1">${r.dateStr.slice(5)} (${dayNames[r.dow]})</td>
       <td style="padding:8px 10px;color:#166534">${fmt(r.morningWorkers)}</td>
-      <td style="padding:8px 10px;color:#166534">${lectureAm}</td>
-      <td style="padding:8px 10px;color:#166534">${assistGuideAm}</td>
-      <td style="padding:8px 10px;color:#166534">${fmtOther(r.morningOther)}</td>
+      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningLecture)}</td>
+      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningAssist)}</td>
+      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningCounsel)}</td>
+      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningCommunity)}</td>
+      <td style="padding:8px 10px;color:#166534">${fmtRole(r.morningEtc)}</td>
       <td style="padding:8px 10px;color:#C2410C">${fmt(r.afternoonWorkers)}</td>
-      <td style="padding:8px 10px;color:#C2410C">${lecturePm}</td>
-      <td style="padding:8px 10px;color:#C2410C">${assistGuidePm}</td>
-      <td style="padding:8px 10px;color:#C2410C">${fmtOther(r.afternoonOther)}</td>
+      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonLecture)}</td>
+      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonAssist)}</td>
+      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonCounsel)}</td>
+      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonCommunity)}</td>
+      <td style="padding:8px 10px;color:#C2410C">${fmtRole(r.afternoonEtc)}</td>
       <td style="padding:8px 10px;font-size:11px;color:#475569">${r.reqText || '<span style="color:#CBD5E1">-</span>'}</td>
     </tr>`;
   }).join('');
+}
+
+function exportOverallCSV() {
+  const ym = document.getElementById('overallMonthSelect').value;
+  const dayNames = ['일','월','화','수','목','금','토'];
+  const joinArr = (arr) => arr.length ? arr.join(' / ') : '';
+  const rows = [['날짜','오전 근무자','오전 강의','오전 보조&안내','오전 상담','오전 커뮤니티','오전 기타','오후 근무자','오후 강의','오후 보조&안내','오후 상담','오후 커뮤니티','오후 기타','변경신청']];
+  lastOverallRows.forEach(r => {
+    rows.push([
+      `${r.dateStr} (${dayNames[r.dow]})`,
+      joinArr(r.morningWorkers), joinArr(r.morningLecture), joinArr(r.morningAssist), joinArr(r.morningCounsel), joinArr(r.morningCommunity), joinArr(r.morningEtc),
+      joinArr(r.afternoonWorkers), joinArr(r.afternoonLecture), joinArr(r.afternoonAssist), joinArr(r.afternoonCounsel), joinArr(r.afternoonCommunity), joinArr(r.afternoonEtc),
+      r.reqText ? '있음' : ''
+    ]);
+  });
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `전체일정표_${ym}.csv`;
+  a.click();
 }
 
 function closeAdmin() {
@@ -2880,7 +2918,6 @@ function switchAdminTab(tab) {
       + `background:${isActive?c.bg:'#F8FAFC'};color:${isActive?c.color:'#94A3B8'};${extra}`;
     document.getElementById(`adminPanel_${t}`).classList.toggle('hidden', t !== tab);
   });
-  document.getElementById('adminExportBtn').style.display = tab === 'att' ? '' : 'none';
   if (tab === 'today') renderTodayDashboard();
   if (tab === 'plan')  renderAdminPlanTable();
   if (tab === 'cal')   renderCalendar();
