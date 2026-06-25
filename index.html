@@ -192,8 +192,7 @@
     <p style="font-size:10px;font-weight:700;letter-spacing:2px;color:#94A3B8;margin-bottom:8px">관리자 인증</p>
     <p style="font-size:16px;font-weight:900;color:#0F172A;margin-bottom:16px">비밀번호를 입력하세요</p>
     <input id="adminPinInput" type="text" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"
-      oninput="this.value=this.value.replace(/\D/g,'')"
-      onkeydown="if(event.key==='Enter') submitAdminPin()"
+      onkeydown="handleMaskedPinKey(event)" onpaste="return false"
       style="width:100%;padding:12px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:20px;text-align:center;letter-spacing:8px;margin-bottom:8px">
     <p id="adminPinError" class="hidden" style="font-size:12px;color:#DC2626;margin-bottom:10px">비밀번호가 일치하지 않습니다</p>
     <div style="display:flex;gap:8px;margin-top:8px">
@@ -1435,7 +1434,30 @@ function changeAdminPassword() {
   document.getElementById('adminPwChangedModal').classList.remove('hidden');
 }
 
+let _pinRaw = '';
+
+// 마지막으로 입력한 숫자만 보이고 이전 숫자는 * 처리 (숄더서핑 방지)
+function handleMaskedPinKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); submitAdminPin(); return; }
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    _pinRaw = _pinRaw.slice(0, -1);
+  } else if (/^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+    if (_pinRaw.length < 4) _pinRaw += e.key;
+  } else if (e.key.length === 1) {
+    e.preventDefault();
+    return;
+  } else {
+    return; // 화살표, Tab 등은 그대로 허용
+  }
+  document.getElementById('adminPinInput').value = _pinRaw.length > 0
+    ? '*'.repeat(_pinRaw.length - 1) + _pinRaw.slice(-1)
+    : '';
+}
+
 function openAdmin() {
+  _pinRaw = '';
   document.getElementById('adminPinInput').value = '';
   document.getElementById('adminPinError').classList.add('hidden');
   document.getElementById('adminPinModal').classList.remove('hidden');
@@ -1443,9 +1465,10 @@ function openAdmin() {
 }
 
 function submitAdminPin() {
-  const val = document.getElementById('adminPinInput').value;
+  const val = _pinRaw;
   if (val !== getAdminPassword()) {
     document.getElementById('adminPinError').classList.remove('hidden');
+    _pinRaw = '';
     document.getElementById('adminPinInput').value = '';
     document.getElementById('adminPinInput').focus();
     return;
