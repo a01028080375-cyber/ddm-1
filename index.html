@@ -698,6 +698,7 @@
           <div style="display:flex;align-items:baseline;gap:6px">
             <div id="kpi_total_checked" class="text-sm font-bold" style="color:var(--emerald)">출근 0명</div>
           </div>
+          <div id="kpi_total_unplanned" class="text-sm font-bold mt-1" style="color:#A855F7">미계획 출근 0명</div>
         </div>
       </div>
 
@@ -3909,6 +3910,7 @@ function renderTodayDashboard() {
   document.getElementById('kpi_monthdays').textContent = totalMonthDays + '일';
   document.getElementById('kpi_total_planned').textContent = `계획 ${totalPlanned}명`;
   document.getElementById('kpi_total_checked').textContent = `출근 ${totalCheckedAmongPlanned}명`;
+  document.getElementById('kpi_total_unplanned').textContent = `미계획 출근 ${totalChecked - totalCheckedAmongPlanned}명`;
 
   // 테이블 — 출근자 먼저, 미출근자 나중
   const allList = [...morningList, ...afternoonList].sort((a, b) => {
