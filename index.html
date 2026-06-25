@@ -186,6 +186,22 @@
   </div>
 </div>
 
+<!-- 관리자 모드 비밀번호 모달 -->
+<div id="adminPinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center fade-in" style="background:rgba(15,23,42,0.5);backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:20px;padding:24px 28px;width:280px;box-shadow:0 8px 40px rgba(15,23,42,0.25);text-align:center">
+    <p style="font-size:10px;font-weight:700;letter-spacing:2px;color:#94A3B8;margin-bottom:8px">관리자 인증</p>
+    <p style="font-size:16px;font-weight:900;color:#0F172A;margin-bottom:16px">비밀번호를 입력하세요</p>
+    <input id="adminPinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
+      onkeydown="if(event.key==='Enter') submitAdminPin()"
+      style="width:100%;padding:12px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:20px;text-align:center;letter-spacing:8px;margin-bottom:8px">
+    <p id="adminPinError" class="hidden" style="font-size:12px;color:#DC2626;margin-bottom:10px">비밀번호가 일치하지 않습니다</p>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="document.getElementById('adminPinModal').classList.add('hidden')" style="flex:1;padding:10px;border-radius:12px;font-size:13px;font-weight:600;background:#F1F5F9;color:#64748B;border:none;cursor:pointer">취소</button>
+      <button onclick="submitAdminPin()" style="flex:1;padding:10px;border-radius:12px;font-size:13px;font-weight:700;background:#2C4A6E;color:#fff;border:none;cursor:pointer">확인</button>
+    </div>
+  </div>
+</div>
+
 <!-- 사원 확인 모달 -->
 <div id="confirmModal" class="hidden fixed inset-0 z-40 flex items-center justify-center fade-in" style="background:rgba(15,23,42,0.5);backdrop-filter:blur(4px)">
   <div style="background:#fff;border-radius:20px;padding:24px 28px;width:260px;box-shadow:0 8px 40px rgba(15,23,42,0.25);text-align:center">
@@ -808,6 +824,15 @@
       </div>
 
       <div class="card p-4 mb-4">
+        <p class="text-xs font-semibold mb-2" style="color:#94A3B8">관리자 비밀번호 변경</p>
+        <div style="display:flex;gap:8px">
+          <input id="newAdminPwInput" type="password" inputmode="numeric" maxlength="4" placeholder="새 4자리 비밀번호" class="flex-1 px-3 py-3 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"
+            onkeydown="if(event.key==='Enter') changeAdminPassword()">
+          <button onclick="changeAdminPassword()" class="px-5 py-3 rounded-xl text-sm font-bold text-white" style="background:#2C4A6E">변경</button>
+        </div>
+      </div>
+
+      <div class="card p-4 mb-4">
         <p class="text-xs font-semibold mb-2" style="color:#94A3B8">신규 직원 추가</p>
         <div style="display:flex;gap:8px">
           <input id="newEmpNameInput" type="text" placeholder="직원 이름" class="flex-1 px-3 py-3 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"
@@ -1388,7 +1413,34 @@ function renderMonthlyRecords() {
 }
 
 
+function getAdminPassword() {
+  return sbGet('admin_password', '0000');
+}
+
+function changeAdminPassword() {
+  const val = document.getElementById('newAdminPwInput').value;
+  if (!/^\d{4}$/.test(val)) { showToast('4자리 숫자로 입력해주세요'); return; }
+  sbSet('admin_password', val);
+  document.getElementById('newAdminPwInput').value = '';
+  showToast('관리자 비밀번호가 변경되었습니다');
+}
+
 function openAdmin() {
+  document.getElementById('adminPinInput').value = '';
+  document.getElementById('adminPinError').classList.add('hidden');
+  document.getElementById('adminPinModal').classList.remove('hidden');
+  document.getElementById('adminPinInput').focus();
+}
+
+function submitAdminPin() {
+  const val = document.getElementById('adminPinInput').value;
+  if (val !== getAdminPassword()) {
+    document.getElementById('adminPinError').classList.remove('hidden');
+    document.getElementById('adminPinInput').value = '';
+    document.getElementById('adminPinInput').focus();
+    return;
+  }
+  document.getElementById('adminPinModal').classList.add('hidden');
   populateAdminMonthSelect();
   populateAdminPlanMonthSelect();
   initCalendar();
