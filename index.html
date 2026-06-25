@@ -3901,14 +3901,14 @@ function renderTodayDashboard() {
   const totalCheckedAmongPlanned = ms.checkedAmongPlanned + as.checkedAmongPlanned;
   const totalRate = totalPlanned > 0 ? Math.round(totalCheckedAmongPlanned / totalPlanned * 100) : (totalChecked > 0 ? 100 : 0);
 
-  // KPI 카드
+  // KPI 카드 — "출근"은 계획된 사람이 실제로 출근한 경우만 집계 (계획 없이 출근한 사람과 헷갈리지 않도록)
   document.getElementById('kpi_morning_planned').textContent = `계획 ${ms.planned}명`;
-  document.getElementById('kpi_morning_val').textContent = `출근 ${ms.checked}명`;
+  document.getElementById('kpi_morning_val').textContent = `출근 ${ms.checkedAmongPlanned}명`;
   document.getElementById('kpi_afternoon_planned').textContent = `계획 ${as.planned}명`;
-  document.getElementById('kpi_afternoon_val').textContent = `출근 ${as.checked}명`;
+  document.getElementById('kpi_afternoon_val').textContent = `출근 ${as.checkedAmongPlanned}명`;
   document.getElementById('kpi_monthdays').textContent = totalMonthDays + '일';
   document.getElementById('kpi_total_planned').textContent = `계획 ${totalPlanned}명`;
-  document.getElementById('kpi_total_checked').textContent = `출근 ${totalChecked}명`;
+  document.getElementById('kpi_total_checked').textContent = `출근 ${totalCheckedAmongPlanned}명`;
 
   // 테이블 — 출근자 먼저, 미출근자 나중
   const allList = [...morningList, ...afternoonList].sort((a, b) => {
