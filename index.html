@@ -191,7 +191,8 @@
   <div style="background:#fff;border-radius:20px;padding:24px 28px;width:280px;box-shadow:0 8px 40px rgba(15,23,42,0.25);text-align:center">
     <p style="font-size:10px;font-weight:700;letter-spacing:2px;color:#94A3B8;margin-bottom:8px">관리자 인증</p>
     <p style="font-size:16px;font-weight:900;color:#0F172A;margin-bottom:16px">비밀번호를 입력하세요</p>
-    <input id="adminPinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
+    <input id="adminPinInput" type="text" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"
+      oninput="this.value=this.value.replace(/\D/g,'')"
       onkeydown="if(event.key==='Enter') submitAdminPin()"
       style="width:100%;padding:12px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:20px;text-align:center;letter-spacing:8px;margin-bottom:8px">
     <p id="adminPinError" class="hidden" style="font-size:12px;color:#DC2626;margin-bottom:10px">비밀번호가 일치하지 않습니다</p>
@@ -826,7 +827,8 @@
       <div class="card p-4 mb-4">
         <p class="text-xs font-semibold mb-2" style="color:#94A3B8">관리자 비밀번호 변경</p>
         <div style="display:flex;gap:8px">
-          <input id="newAdminPwInput" type="password" inputmode="numeric" maxlength="4" placeholder="새 4자리 비밀번호" class="flex-1 px-3 py-3 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"
+          <input id="newAdminPwInput" type="text" inputmode="numeric" maxlength="4" placeholder="새 4자리 비밀번호" autocomplete="off" class="flex-1 px-3 py-3 text-sm rounded-xl" style="border:1.5px solid #E2E8F0;color:#0F172A"
+            oninput="this.value=this.value.replace(/\D/g,'')"
             onkeydown="if(event.key==='Enter') changeAdminPassword()">
           <button onclick="changeAdminPassword()" class="px-5 py-3 rounded-xl text-sm font-bold text-white" style="background:#2C4A6E">변경</button>
         </div>
